@@ -20,17 +20,23 @@ axis image
 % master path
 if ispc
     %masterPath = '/home/lab/vnc1_r066/roi_generation';
-    masterPath = '/home/zachd/cb2';
+    %masterPath = '/home/zachd/mounts/cb2';
+    masterPath = '/n/groups/htem/temcagt/datasets/cb2';
 elseif isunix
     %masterPath = '/home/lab/vnc1_r066/roi_generation';
-    masterPath = '/home/zachd/cb2';
+    %masterPath = '/home/zachd/mounts/cb2';
+    masterPath = '/n/groups/htem/temcagt/datasets/cb2'
 else
     disp('OS error - not Win or Unix');
 end
         
 % saved mask templates for slot and section, respectively, in txt
 slot_mask_file = [masterPath '/masks/' 'slot_mask_180628.txt'];
+% slot_mask_file = [masterPath '/masks/' 'calibration_L_sect70.txt'];
+% slot_mask_file = [masterPath '/masks/' 'ROI_mask_ref_sect1000.txt'];
+
 section_mask_file = [masterPath '/masks/' 'section_masks_1000_180725.txt'];
+% section_mask_file = [masterPath '/masks/' 'sect70_ref.txt'];
 %section_mask_file = [masterPath '/masks/' 'section_3_mask.txt'];
 focus_mask_file = [masterPath '/masks/' 'focus_mask.txt'];
 
@@ -72,7 +78,7 @@ LoadNewMask(hfig,slot_mask_file,section_mask_file, focus_mask_file);
 % S.is_verified = 0;
    
 %% Create UI controls
-set(gcf,'DefaultUicontrolUnits','normalized');slot_mask_file = [masterPath '/masks/' 'slotMask.txt'];
+set(gcf,'DefaultUicontrolUnits','normalized'); slot_mask_file = [masterPath '/masks/' 'slotMask.txt'];
 section_mask_file = [masterPath '/masks/' 'sectionMask_503.txt'];
 %section_mask_file = [masterPath '/masks/' 'section_3_mask.txt'];
 focus_mask_file = [masterPath '/masks/' 'focus_mask.txt'];
@@ -392,7 +398,7 @@ end
 function checkbox_isVerifiedFlag_Callback(hObject,~)
 hfig = getParentFigure(hObject);
 S = getappdata(hfig,'S');
-S.is_verified = get(hObject,'Value');
+S.is_verified = 1; %S.is_verified = get(hobject,'Value;);
 setappdata(hfig,'S',S);
 end
 
@@ -403,8 +409,31 @@ global h_probflag h_verflag
 masktypeID = getappdata(hfig,'masktypeID');
 if strcmp(event.Key,'space')
     % switch between mask types (slot vs section)
+    hpoly = getappdata(hfig,'hpoly');
+    pos = getPosition(hpoly(masktypeID))
+    if masktypeID == 1
+        setappdata(hfig,'mpos1',{masktypeID pos})
+        test = getappdata(hfig,'mpos1')
+    else
+        setappdata(hfig,'mpos2',{masktypeID pos})
+        test = getappdata(hfig,'mpos2')
+    end
     masktypeID = ToggleSelectedMask(hfig);
-    
+
+elseif strcmp(event.Key,'j')
+    % Move current mask to the last positon of the previous mask
+    hpoly = getappdata(hfig,'hpoly');
+    if masktypeID == 1
+        m1pos = getappdata(hfig,'mpos1') 
+        m1pos = m1pos(2)
+        setConstrainedPosition(hpoly(masktypeID),m1pos{1});
+        setappdata(hfig,'hpoly',hpoly);
+    else
+        m2pos = getappdata(hfig,'mpos2') 
+        m2pos = m2pos(2)
+        setConstrainedPosition(hpoly(masktypeID),m2pos{1});
+        setappdata(hfig,'hpoly',hpoly);
+    end
     % flags
 elseif strcmp(event.Key,'p') % check 'is_problematic' flag
     h_probflag.Value = 1;
@@ -445,7 +474,11 @@ elseif strcmp(event.Key,'q') % rotation: counter-clockwise
 elseif strcmp(event.Key,'e') % translation: clockwise
     rotationAngle = -0.005;
     RotateMask(hfig,rotationAngle,masktypeID);
-    
+elseif strcmp(event.Key,'z') % undo last rotation/translation
+    hpoly = getappdata(hfig,'hpoly')
+    lpos = getappdata(hfig,'lastpos')
+    setConstrainedPosition(hpoly(masktypeID),lpos);
+    setappdata(hfig,'hpoly',hpoly);
 end
 end
 
@@ -685,7 +718,8 @@ if tf % (if annotation file exists)
     
     %% load flags
     h_probflag.Value = S.is_problematic;
-    h_verflag.Value = S.is_verified;
+%     h_verflag.Value = S.is_verified;
+    h_verflag.Value = 1;
 else
     LoadNewMask(hfig,slot_mask_file,section_mask_file, focus_mask_file);
     h_probflag.Value = 0;
@@ -753,7 +787,11 @@ i_im = getappdata(hfig,'i_im');
 numFiles = getappdata(hfig,'numFiles');
 if i_im < numFiles
     i_im = i_im+1;
-    LoadImage(hfig,i_im);    
+%     hpoly = getappdata(hfig,'hpoly');
+%     lpos = getappdata(hfig,'lastpos');
+%     setConstrainedPosition(hpoly(2),lpos);
+%     setappdata(hfig,'hpoly',hpoly);
+    LoadImage(hfig,i_im); 
     % update GUI
     h_i_im.String = num2str(i_im);
 else
@@ -803,6 +841,7 @@ M = getappdata(hfig,'M');
 hpoly = getappdata(hfig,'hpoly');
 
 % record rotation angle for this section
+
 if masktypeID == 1
     S.slot.rotation = S.slot.rotation + rotationAngle;
 elseif masktypeID == 2
@@ -822,6 +861,7 @@ M(masktypeID).pos = pos2;
 setappdata(hfig,'S',S);
 setappdata(hfig,'M',M);
 setappdata(hfig,'hpoly',hpoly);
+setappdata(hfig,'lastpos',pos);
 end
 
 function TranslateMask(hfig,translationArray,masktypeID)
@@ -842,11 +882,14 @@ pos2(:,1) = pos2(:,1)+translationArray(1);
 pos2(:,2) = pos2(:,2)+translationArray(2);
 setConstrainedPosition(hpoly(masktypeID),pos2);
 M(masktypeID).pos = pos2;
+display(pos)
+display(pos2)
 
 % save
 setappdata(hfig,'S',S);
 setappdata(hfig,'M',M);
 setappdata(hfig,'hpoly',hpoly);
+setappdata(hfig,'lastpos', pos);
 end
 
 function center = GetCenterPos(pos)

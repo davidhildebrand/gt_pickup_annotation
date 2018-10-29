@@ -1,36 +1,30 @@
 
 %% ATK 170703
 tapedir = 1; % negative is feed reel starts from high section numbers
-startSectionID = 76;
-endSectionID = 76;
-skipList = [91];
+startSectionID = 750;
+endSectionID = 1000;
+skipList = [73, 91,143,184,186, 187, 192,193,194,202, 217,276,445, 448, 493, 496, 509,548,558,565,566,567,568,572,580,586,594,674, 745];
+% partial 191, 195, 99 (debris)
 write_json = 1;
 plot_imgs = 1;
 sectionList = startSectionID:endSectionID;
+%sectionList=[609,611:618,621,622,640,653] % Only for reimaging
 sectionList = setdiff(sectionList,skipList,'stable');
-%% Load Mask Files
-section_mask_ref_file = [masterPath '/masks/' 'sect1000_ref.txt'];
-ROI_mask_file = [masterPath '/masks/' 'ROI_mask_ref_sect1000.txt']; 
-section_mask_ref_file = [masterPath '/masks/' 'sect70_ref.txt'];
-ROI_mask_file = [masterPath '/masks/' 'calibration_L_sect70.txt'];
 
-% saved mask templates for slot and section, respectively, in txt
-slot_mask_file = [masterPath '/masks/' 'slot_mask_180628.txt'];
-section_mask_file = [masterPath '/masks/' 'section_masks_1000_180725.txt'];
-focus_mask_file = [];%[masterPath '/masks/' 'focus_mask.txt'];
 
 %% Set paths and load mask and image
 % master path
 if ispc
-    masterPath = '/home/zachd/cb2';
+    masterPath = '/n/groups/htem/temcagt/datasets/cb2';
     %masterPath = '/home/lab/170601_P26_Emx_SHH_wt2_r130';
 elseif isunix
-    masterPath = '/home/zachd/cb2'; 
+    masterPath = '/n/groups/htem/temcagt/datasets/cb2'; 
     %masterPath = '/home/lab/170601_P26_Emx_SHH_wt2_r130';
 else
     disp('OS error - not Win or Unix');
 end
-queue_output = [masterPath '/queues/' date '_' num2str(startSectionID) '-' num2str(endSectionID) '.json'];
+queue_output = [masterPath '/queues/' 'i_am_renaming_this' date '_' num2str(startSectionID) '-' num2str(endSectionID) '.json'];
+%queue_output = [masterPath '/queues/' date '_reimage_list.json']; % Only for reimaging
 
 
 % output of annotation, in txt
@@ -51,9 +45,17 @@ if write_json == 1
 end
 
 %% ATK 180625 - Intermediate code for ROI masks. Should be integrated into GUI soon.
+%% Load Mask Files
 
+section_mask_ref_file = [masterPath '/masks/' 'sect1000_ref.txt'];
+ROI_mask_file = [masterPath '/masks/' 'ROI_mask_ref_sect1000.txt']; 
+% section_mask_ref_file = [masterPath '/masks/' 'sect70_ref.txt'];
+% ROI_mask_file = [masterPath '/masks/' 'calibration_L_sect70.txt'];
 
-% Section mask files used to be here, moved to "Load mask files ZD 180727
+% saved mask templates for slot and section, respectively, in txt
+slot_mask_file = [masterPath '/masks/' 'slot_mask_180628.txt'];
+section_mask_file = [masterPath '/masks/' 'section_masks_1000_180725.txt'];
+focus_mask_file = [];%[masterPath '/masks/' 'focus_mask.txt'];
 
 % Get orig section mask vertices (masks format)
 fid3 = fopen(ROI_mask_file);
@@ -121,7 +123,7 @@ for i = 1:length(sectionList)
     idx5 = find(strcmp(s{1}, 'FLAGS'), 1, 'first');
     flags = dlmread(f,'',[idx5+1 0 idx5+1 1]);
     problematic(i) = flags(1);
-    verified(i) = flags(2);
+    verified(i) = 1;
     fclose(fid);
 end
 problems = sectionList(find(problematic==1));
@@ -168,7 +170,6 @@ for i = 1:length(sectionList)
     flags = dlmread(f,'',[idx5+1 0 idx5+1 1]);
     isproblematic = flags(1);
     isverified = flags(2);
-    
     fclose(fid);
     
     %% Determine scale and center of slot
@@ -323,7 +324,11 @@ end
         %ROI_outline = vertcat(ROIvert_mask, ROIvert_mask(1,:));
         ROI_outline = vertcat(ROI_crop, ROI_crop(1,:));
         %ROI_outline = vertcat(section_mask_calc, section_mask_calc(1,:)); 
-        plot(ROI_outline(:,1),ROI_outline(:,2),'c-','Linewidth',2)
+        plot(ROI_outline(:,1),ROI_outline(:,2),'b-','Linewidth',2)
+        
+        %plot slot outline
+        pgon = polyshape((slot(:,1))',(slot(:,2))');
+        plot(pgon,'FaceColor','none','EdgeColor','w','LineWidth', 2);
 
         timestamp = datetime('now');
         title(['sect ' num2str(sectionList(i)) ' ' datestr(timestamp)]);
