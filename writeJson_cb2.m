@@ -1,14 +1,13 @@
 
 %% ATK 170703
 tapedir = 1; % negative is feed reel starts from high section numbers
-startSectionID = 750;
-endSectionID = 1000;
-skipList = [73, 91,143,184,186, 187, 192,193,194,202, 217,276,445, 448, 493, 496, 509,548,558,565,566,567,568,572,580,586,594,674, 745];
+startSectionID = 1026;
+endSectionID = 1030;
+skipList = [73, 91,143,184,186, 187, 192,193,194,202, 217,276,445, 448, 493, 496, 509,548,558,565,566,567,568,572,580,586,594,674,745,1040,1063,1067,1082,1100,1112,1114,1115];
 % partial 191, 195, 99 (debris)
 write_json = 1;
 plot_imgs = 1;
 sectionList = startSectionID:endSectionID;
-%sectionList=[609,611:618,621,622,640,653] % Only for reimaging
 sectionList = setdiff(sectionList,skipList,'stable');
 
 
@@ -23,7 +22,7 @@ elseif isunix
 else
     disp('OS error - not Win or Unix');
 end
-queue_output = [masterPath '/queues/' 'i_am_renaming_this' date '_' num2str(startSectionID) '-' num2str(endSectionID) '.json'];
+queue_output = [masterPath '/queues/' date '_' num2str(startSectionID) '-' num2str(endSectionID) '.json'];
 %queue_output = [masterPath '/queues/' date '_reimage_list.json']; % Only for reimaging
 
 
@@ -128,6 +127,8 @@ for i = 1:length(sectionList)
 end
 problems = sectionList(find(problematic==1));
 unverified = sectionList(find(verified==0));
+
+sectionList = setdiff(sectionList,problems,'stable');
 
 disp(['Problem sections: ' num2str(problems)]);
 if ~isempty(unverified) > 0
@@ -245,7 +246,7 @@ for i = 1:length(sectionList)
     height_nm = bottom_edge_nm - top_edge_nm;
     
     %% Write json entry
-    if write_json == 1 && ~isproblematic
+    if write_json == 1 && ~isproblematic%str2double(find_problematic(i))
         vertices=', "vertices": [';
         for vertex = ROInm'
             vertices=[vertices '[' num2str((vertex(1)-(right_edge_nm-width_nm))/width_nm) ', ' num2str((vertex(2)-top_edge_nm)/height_nm) '], '];

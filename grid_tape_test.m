@@ -25,8 +25,8 @@ if ispc
 elseif isunix
     %masterPath = '/home/lab/vnc1_r066/roi_generation';
     %masterPath = '/home/zachd/mounts/cb2';
-    %masterPath = '/home/zachd/mounts/test'
-    masterPath = '/n/groups/htem/temcagt/datasets/cb2'
+    masterPath = '/home/zachd/mounts/test'
+    %masterPath = '/n/groups/htem/temcagt/datasets/cb2'
 else
     disp('OS error - not Win or Unix');
 end
@@ -41,9 +41,9 @@ section_mask_file = [masterPath '/masks/' 'section_masks_1000_180725.txt'];
 %section_mask_file = [masterPath '/masks/' 'section_3_mask.txt'];
 focus_mask_file = [masterPath '/masks/' 'focus_mask.txt'];
 
-setappdata(hfig,'slot_mask_file',slot_mask_file);
-setappdata(hfig,'section_mask_file',section_mask_file);
-setappdata(hfig,'focus_mask_file', focus_mask_file);
+%setappdata(hfig,'slot_mask_file',slot_mask_file);
+%setappdata(hfig,'section_mask_file',section_mask_file);
+%setappdata(hfig,'focus_mask_file', focus_mask_file);
 
 % output of annotation, in txt
 outputPath = [masterPath '/annotations']; % saves annotated relative positions to txt, for each individual section
@@ -53,7 +53,7 @@ end
 setappdata(hfig,'outputPath',outputPath);
 
 % image folder
-imPath = [masterPath '/img_links']; % contains images of individual sections | normally imglinks
+imPath = [masterPath]; % contains images of individual sections | normally imglinks
 ParseImageDir(hfig,imPath);
 
 
@@ -63,9 +63,9 @@ disp('Load first section')
 i_im = 1;
 setappdata(hfig,'i_im',i_im);
 secID = GetSectionIDfromCounter(hfig,i_im);
-S = ScanText_GTA(secID,outputPath,slot_mask_file,section_mask_file, focus_mask_file);
-setappdata(hfig,'S',S);
-LoadNewMask(hfig,slot_mask_file,section_mask_file, focus_mask_file);
+%S = ScanText_GTA(secID,outputPath,slot_mask_file,section_mask_file, focus_mask_file);
+%setappdata(hfig,'S',S);
+%LoadNewMask(hfig,slot_mask_file,section_mask_file, focus_mask_file);
 
 % structure for individual slots:
 % S = [];
@@ -79,11 +79,11 @@ LoadNewMask(hfig,slot_mask_file,section_mask_file, focus_mask_file);
 % S.is_verified = 0;
    
 %% Create UI controls
-set(gcf,'DefaultUicontrolUnits','normalized'); slot_mask_file = [masterPath '/masks/' 'slotMask.txt'];
-section_mask_file = [masterPath '/masks/' 'sectionMask_503.txt'];
+%set(gcf,'DefaultUicontrolUnits','normalized'); slot_mask_file = [masterPath '/masks/' 'slotMask.txt'];
+%section_mask_file = [masterPath '/masks/' 'sectionMask_503.txt'];
 %section_mask_file = [masterPath '/masks/' 'section_3_mask.txt'];
-focus_mask_file = [masterPath '/masks/' 'focus_mask.txt'];
-set(gcf,'defaultUicontrolBackgroundColor',[1 1 1]);
+%ocus_mask_file = [masterPath '/masks/' 'focus_mask.txt'];
+%set(gcf,'defaultUicontrolBackgroundColor',[1 1 1]);
 
 % tab group setup
 tgroup = uitabgroup('Parent', hfig, 'Position', [0.05,0.88,0.91,0.12]);
@@ -498,7 +498,7 @@ end
 end
 
 function closefigure_Callback(hfig,~)
-SaveCurrentMasks(hfig);
+%SaveCurrentMasks(hfig);
 
 global EXPORT_autorecover;
 EXPORT_autorecover = getappdata(hfig);
@@ -581,9 +581,9 @@ if ~isempty(hpoly) % (first load exception)
 end
 
 % update S data (relangle is updated directly through Rotation function)
-S.slot.translation = GetCenterPos(M(1).pos) - GetCenterPos(M(1).pos_init);
-S.section.translation = GetCenterPos(M(2).pos) - GetCenterPos(M(2).pos_init);
-S.focus.translation = GetCenterPos(M(3).pos) - GetCenterPos(M(3).pos_init);
+%S.slot.translation = GetCenterPos(M(1).pos) - GetCenterPos(M(1).pos_init);
+%S.section.translation = GetCenterPos(M(2).pos) - GetCenterPos(M(2).pos_init);
+%S.focus.translation = GetCenterPos(M(3).pos) - GetCenterPos(M(3).pos_init);
 setappdata(hfig,'S',S);
 
 % write to text file
@@ -592,7 +592,7 @@ end
 
 function LoadImage(hfig,i_im)
 %% save mask positions for previous image
-SaveCurrentMasks(hfig);
+%SaveCurrentMasks(hfig);
 
 %% load new file
 setappdata(hfig,'i_im',i_im); % set new image index
