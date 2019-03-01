@@ -1,4 +1,16 @@
 function hfig = GridTapeAlign
+%% NOTES:
+%  - This script should be used to generate the GridTapeAlign script for new
+%    datasets. It serves as skeleton code, with some lines to be filled
+%    in specific to your dataset. These lines include:
+%       - Setting masterPath (path to dataset directory on local machine)
+%       - Setting slot_mask_file (Identifies where the slot is)
+%       - Setting section_mask_file (Identifies where the section is)
+%       - Setting focus_mask_file (currently unused, can set to anything)
+%       - Setting imPath, which is usualy masterPath + img_links
+%  - Search for TODO to find where to set each file
+
+
 %% Make figure
 scrn = get(0,'Screensize');
 hfig = figure('Position',[scrn(3)*0 scrn(4)*0 scrn(3)*1 scrn(4)*1],...% [50 100 1700 900]
@@ -16,32 +28,36 @@ h_ax = axes('Position',ax_pos);
 axis image
 % axes(h_ax);
 
-%% Set paths and load mask and image
+%% Set paths and load mask and image 
 % master path
 if ispc
     %masterPath = '/home/lab/vnc1_r066/roi_generation';
     %masterPath = '/home/zachd/mounts/cb2';
-    masterPath = '/home/emtracer/dorsalhorn1/roi_generation';
+    %masterPath = '/home/emtracer/dorsalhorn1/roi_generation';
+    %% TODO: set masterPath %%
 elseif isunix
     %masterPath = '/home/lab/vnc1_r066/roi_generation';
     %masterPath = '/home/zachd/mounts/cb2';
     %masterPath = '/home/zachd/mounts/test'
-    masterPath = '/home/emtracer/dorsalhorn1/roi_generation';
+    %masterPath = '/home/emtracer/dorsalhorn1/roi_generation';
 else
     disp('OS error - not Win or Unix');
 end
-        
+ 
 % saved mask templates for slot and section, respectively, in txt
-slot_mask_file = [masterPath '/masks/' 'slotMask20190219.txt'];
+%slot_mask_file = [masterPath '/masks/' 'slotMask20190219.txt'];
 % slot_mask_file = [masterPath '/masks/' 'calibration_L_sect70.txt'];
 % slot_mask_file = [masterPath '/masks/' 'ROI_mask_ref_sect1000.txt'];
-
-section_mask_file = [masterPath '/masks/' 'section_mask_190109_sect496.txt'];
+%% TODO: Set slot_mask
+%section_mask_file = [masterPath '/masks/' 'section_mask_190109_sect496.txt'];
 %section_mask_file = [masterPath '/masks/' 'calibration.txt'];
 % section_mask_file = [masterPath '/masks/' 'sect70_ref.txt'];
 %section_mask_file = [masterPath '/masks/' 'section_3_mask.txt'];
-focus_mask_file = [masterPath '/masks/' 'slotMask.txt'];
+%% TODO: Set section_mask
+%focus_mask_file = [masterPath '/masks/' 'slotMask.txt'];
+%% TODO: Set focus_mask
 
+%%
 setappdata(hfig,'slot_mask_file',slot_mask_file);
 setappdata(hfig,'section_mask_file',section_mask_file);
 setappdata(hfig,'focus_mask_file', focus_mask_file);
@@ -54,6 +70,7 @@ end
 setappdata(hfig,'outputPath',outputPath);
 
 % image folder
+
 imPath = [masterPath '/img_links']; % contains images of individual sections | normally imglinks
 ParseImageDir(hfig,imPath);
 

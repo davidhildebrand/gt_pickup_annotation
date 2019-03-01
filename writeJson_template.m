@@ -43,17 +43,19 @@ if write_json == 1
     fprintf(fileID,'{');
 end
 
-%% ATK 180625 - Intermediate code for ROI masks. Should be integrated into GUI soon.
 %% Load Mask Files
 
-section_mask_ref_file = [masterPath '/masks/' 'sect1000_ref.txt'];
-ROI_mask_file = [masterPath '/masks/' 'ROI_mask_ref_sect1000.txt']; 
-% section_mask_ref_file = [masterPath '/masks/' 'sect70_ref.txt'];
-% ROI_mask_file = [masterPath '/masks/' 'calibration_L_sect70.txt'];
+%% TODO: section_mask_ref
+%section_mask_ref_file = [masterPath '/masks/' 'sect1000_ref.txt'];
+%% TODO: ROI_mask
+%ROI_mask_file = [masterPath '/masks/' 'ROI_mask_ref_sect1000.txt']; 
 
-% saved mask templates for slot and section, respectively, in txt
-slot_mask_file = [masterPath '/masks/' 'slot_mask_180628.txt'];
-section_mask_file = [masterPath '/masks/' 'section_masks_1000_180725.txt'];
+%% TODO: slot_mask
+%slot_mask_file = [masterPath '/masks/' 'slot_mask_180628.txt'];
+%% TODO: section_mask
+%section_mask_file = [masterPath '/masks/' 'section_masks_1000_180725.txt'];
+%%
+
 focus_mask_file = [];%[masterPath '/masks/' 'focus_mask.txt'];
 
 % Get orig section mask vertices (masks format)

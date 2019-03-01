@@ -21,22 +21,22 @@ axis image
 if ispc
     %masterPath = '/home/lab/vnc1_r066/roi_generation';
     %masterPath = '/home/zachd/mounts/cb2';
-    masterPath = '/home/emtracer/dorsalhorn1/roi_generation';
+    masterPath = '/home/emtracer/190117_sybHRP_r83/roi_generation';
 elseif isunix
     %masterPath = '/home/lab/vnc1_r066/roi_generation';
     %masterPath = '/home/zachd/mounts/cb2';
     %masterPath = '/home/zachd/mounts/test'
-    masterPath = '/home/emtracer/dorsalhorn1/roi_generation';
+    masterPath = '/home/emtracer/190117_sybHRP_r83/roi_generation';
 else
     disp('OS error - not Win or Unix');
 end
         
 % saved mask templates for slot and section, respectively, in txt
-slot_mask_file = [masterPath '/masks/' 'slotMask20190219.txt'];
+slot_mask_file = [masterPath '/masks/' 'slotMask.txt'];
 % slot_mask_file = [masterPath '/masks/' 'calibration_L_sect70.txt'];
 % slot_mask_file = [masterPath '/masks/' 'ROI_mask_ref_sect1000.txt'];
 
-section_mask_file = [masterPath '/masks/' 'section_mask_190109_sect496.txt'];
+section_mask_file = [masterPath '/masks/' 'section250.txt'];
 %section_mask_file = [masterPath '/masks/' 'calibration.txt'];
 % section_mask_file = [masterPath '/masks/' 'sect70_ref.txt'];
 %section_mask_file = [masterPath '/masks/' 'section_3_mask.txt'];
@@ -54,7 +54,7 @@ end
 setappdata(hfig,'outputPath',outputPath);
 
 % image folder
-imPath = [masterPath '/img_links']; % contains images of individual sections | normally imglinks
+imPath = [masterPath '/sections']; % contains images of individual sections | normally imglinks
 ParseImageDir(hfig,imPath);
 
 

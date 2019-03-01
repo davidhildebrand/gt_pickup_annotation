@@ -1,31 +1,30 @@
 
 %% ATK 170703
 tapedir = 1; % negative is feed reel starts from high section numbers
-startSectionID = 496;
-endSectionID = 499;
-skipList = [];
+startSectionID = 1026;
+endSectionID = 1030;
+skipList = [73, 91,143,184,186, 187, 192,193,194,202, 217,276,445, 448, 493, 496, 509,548,558,565,566,567,568,572,580,586,594,674,745,1040,1063,1067,1082,1100,1112,1114,1115];
+% partial 191, 195, 99 (debris)
 write_json = 1;
 plot_imgs = 1;
 sectionList = startSectionID:endSectionID;
 sectionList = setdiff(sectionList,skipList,'stable');
+
+
 %% Set paths and load mask and image
 % master path
 if ispc
-    masterPath = '/home/aaron/SHH2';
+    masterPath = '/n/groups/htem/temcagt/datasets/cb2';
     %masterPath = '/home/lab/170601_P26_Emx_SHH_wt2_r130';
 elseif isunix
-    masterPath = '/home/emtracer/dorsalhorn1/roi_generation';
+    masterPath = '/n/groups/htem/temcagt/datasets/cb2'; 
     %masterPath = '/home/lab/170601_P26_Emx_SHH_wt2_r130';
 else
     disp('OS error - not Win or Unix');
 end
-queue_output = [masterPath '/queues/' date '_' num2str(startSectionID) '-' num2str(endSectionID) 'test.json'];
+queue_output = [masterPath '/queues/' date '_' num2str(startSectionID) '-' num2str(endSectionID) '.json'];
+%queue_output = [masterPath '/queues/' date '_reimage_list.json']; % Only for reimaging
 
-% saved mask templates for slot and section, respectively, in txt
-slot_mask_file = [masterPath '/masks/' 'slotMask20190219.txt'];
-section_mask_file = [masterPath '/masks/' 'section_mask_190109_sect496.txt']; %section_mask_190109_sect496.txt
-%section_mask_file = [masterPath '/masks/' 'section_3_mask.txt'];
-focus_mask_file = [masterPath '/masks/' 'focus_mask.txt'];
 
 % output of annotation, in txt
 outputPath = [masterPath '/annotations']; % saves annotated relative positions to txt, for each individual section
@@ -45,10 +44,19 @@ if write_json == 1
 end
 
 %% ATK 180625 - Intermediate code for ROI masks. Should be integrated into GUI soon.
+%% Load Mask Files
 
-section_mask_ref_file = [masterPath '/annotations/' '496.txt'];
-ROI_mask_file = [masterPath '/masks/' 'roi_mask_190110_sect496.txt'];
-%ROI_mask_file = [masterPath '/masks/' 'calibration.txt'];
+%% TODO: section_mask_ref
+%section_mask_ref_file = [masterPath '/masks/' 'sect1000_ref.txt'];
+%% TODO: ROI_mask
+%ROI_mask_file = [masterPath '/masks/' 'ROI_mask_ref_sect1000.txt']; 
+
+%% TODO: slot_mask
+%slot_mask_file = [masterPath '/masks/' 'slot_mask_180628.txt'];
+%% TODO: section_mask
+section_mask_file = [masterPath '/masks/' 'section_masks_1000_180725.txt'];
+focus_mask_file = [];%[masterPath '/masks/' 'focus_mask.txt'];
+
 % Get orig section mask vertices (masks format)
 fid3 = fopen(ROI_mask_file);
 section_mask_orig = dlmread(section_mask_file,' ',1,0);
@@ -74,11 +82,8 @@ section_angle = atan(section_angle_ref(2)/section_angle_ref(1));
 
 fclose(fid);
 
-% delta_xy = section_xy - section_mask_xy;
-% delta_angle = section_angle - section_mask_angle;
-
-delta_xy = 0;
-delta_angle = 0;
+delta_xy = section_xy - section_mask_xy;
+delta_angle = section_angle - section_mask_angle;
 
 % Get ROI mask vertices (masks format)
 fid2 = fopen(ROI_mask_file, 'rt');
@@ -86,13 +91,12 @@ ROI_ref = dlmread(ROI_mask_file,' ',1,0);
 fclose(fid2);
 
 % Rotate ROI back to ref mask
-%section_mask_calc = RotateMaskVertices(section_ref,delta_angle,section_xy)-delta_xy;%RotateMaskVertices(section_ref,-section_angle,section_xy)+delta_xy;
-%test = section_mask_calc - section_mask_orig;
-section_mask_calc = section_mask_orig;
+section_mask_calc = RotateMaskVertices(section_ref,delta_angle,section_xy)-delta_xy;%RotateMaskVertices(section_ref,-section_angle,section_xy)+delta_xy;
+test = section_mask_calc - section_mask_orig;
 
 % ROIvert_mask is the ROI in the original mask reference frame
-%ROIvert_mask = RotateMaskVertices(ROI_ref,-section_angle,section_xy)-delta_xy;
-ROIvert_mask = ROI_ref;
+ROIvert_mask = RotateMaskVertices(ROI_ref,-section_angle,section_xy)-delta_xy;
+
 %% Set up figure (for annotation images)
 if plot_imgs == 1
     scrn = get(0,'Screensize');
@@ -119,16 +123,18 @@ for i = 1:length(sectionList)
     idx5 = find(strcmp(s{1}, 'FLAGS'), 1, 'first');
     flags = dlmread(f,'',[idx5+1 0 idx5+1 1]);
     problematic(i) = flags(1);
-    verified(i) = flags(2);
+    verified(i) = 1;
     fclose(fid);
 end
 problems = sectionList(find(problematic==1));
 unverified = sectionList(find(verified==0));
 
+sectionList = setdiff(sectionList,problems,'stable');
+
 disp(['Problem sections: ' num2str(problems)]);
-% if ~isempty(unverified) > 0
-% %    error(['Unverified sections: ' num2str(unverified)]);
-% end
+if ~isempty(unverified) > 0
+    error(['Unverified sections: ' num2str(unverified)]);
+end
 %%
 tf = [];
 % start writing json file (will continue in for loop over sections)
@@ -166,7 +172,6 @@ for i = 1:length(sectionList)
     flags = dlmread(f,'',[idx5+1 0 idx5+1 1]);
     isproblematic = flags(1);
     isverified = flags(2);
-    
     fclose(fid);
     
     %% Determine scale and center of slot
@@ -178,12 +183,6 @@ for i = 1:length(sectionList)
     xR = (slot(5,1)+slot(6,1))/2;
     yT = (slot(3,2)+slot(4,2))/2;
     yB = (slot(7,2)+slot(8,2))/2;
-    
-    % find edges of slot in units of pixels, using 20 vertices
-    xL = min(slot(:,1));
-    xR = max(slot(:,1));
-    yT = max(slot(:,2));
-    yB = min(slot(:,2));
     
     slot_center_pxl = [(xR+xL)/2 (yB+yT)/2];
     slot_size_pxl = [(xR-xL) (yB-yT)];
@@ -237,6 +236,7 @@ for i = 1:length(sectionList)
     
     % Convert ROI to nm and slot-centric coordinates 
     ROInm = round((ROI_crop-slot_center_pxl)./pxl_scale); 
+    ROInm = -ROInm; % 180 degree rotation to match temcaGT vs staining image orientation.
     
     % Calculate bounding box 
     right_edge_nm = max(ROInm(:,1)); 
@@ -247,7 +247,7 @@ for i = 1:length(sectionList)
     height_nm = bottom_edge_nm - top_edge_nm;
     
     %% Write json entry
-    if write_json == 1
+    if write_json == 1 && ~isproblematic%str2double(find_problematic(i))
         vertices=', "vertices": [';
         for vertex = ROInm'
             vertices=[vertices '[' num2str((vertex(1)-(right_edge_nm-width_nm))/width_nm) ', ' num2str((vertex(2)-top_edge_nm)/height_nm) '], '];
@@ -305,7 +305,7 @@ end
         figure(hfig1);
         channel = 3; % blue channel seems to be the most informative
         num_levels = 20; % number of levels for histogram equalization
-        A2 = histeq(im_raw,20);
+        A2 = histeq(im_raw(:,:,3),20);
         A1 = A2;
         imshow(A1,jet(225)); axis equal; axis off; hold on;
         hold on; 
@@ -326,7 +326,11 @@ end
         %ROI_outline = vertcat(ROIvert_mask, ROIvert_mask(1,:));
         ROI_outline = vertcat(ROI_crop, ROI_crop(1,:));
         %ROI_outline = vertcat(section_mask_calc, section_mask_calc(1,:)); 
-        plot(ROI_outline(:,1),ROI_outline(:,2),'r-','Linewidth',2)
+        plot(ROI_outline(:,1),ROI_outline(:,2),'b-','Linewidth',2)
+        
+        %plot slot outline
+        pgon = polyshape((slot(:,1))',(slot(:,2))');
+        plot(pgon,'FaceColor','none','EdgeColor','w','LineWidth', 2);
 
         timestamp = datetime('now');
         title(['sect ' num2str(sectionList(i)) ' ' datestr(timestamp)]);
@@ -363,3 +367,5 @@ end
 if write_json == 1
     fclose(fileID);
 end
+
+%% End of Script
