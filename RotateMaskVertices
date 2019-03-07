@@ -1,0 +1,26 @@
+function RotateMask(hfig,rotationAngle,masktypeID)
+S = getappdata(hfig,'S');
+M = getappdata(hfig,'M');
+hpoly = getappdata(hfig,'hpoly');
+
+% record rotation angle for this section
+if masktypeID == 1
+    S.slot.rotation = S.slot.rotation + rotationAngle;
+elseif masktypeID == 2
+    S.section.rotation = S.section.rotation + rotationAngle;
+end
+
+pos = getPosition(hpoly(masktypeID));
+center = GetCenterPos(pos);
+poscenter = repmat(center,size(pos,1),1);
+rotationArray = [cos(rotationAngle), -sin(rotationAngle); sin(rotationAngle), cos(rotationAngle)];
+pos2 = (pos-poscenter) * rotationArray + poscenter;
+%     hpoly_section = impoly(h_ax, pos2);
+setConstrainedPosition(hpoly(masktypeID),pos2);
+M(masktypeID).pos = pos2;
+
+% save
+setappdata(hfig,'S',S);
+setappdata(hfig,'M',M);
+setappdata(hfig,'hpoly',hpoly);
+end
