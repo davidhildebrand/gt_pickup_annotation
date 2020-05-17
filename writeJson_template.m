@@ -1,41 +1,58 @@
+% Write temcaGT queue files based on section annotations using section
+% masks that mark the edges of the other sections (such as knifemarks).
 
-%% ATK 170703
+% If you can see the tissue directly and draw the imaging ROI directly for
+% each section, don't use this script. 
+
+% ATK 170703
+% updated with some instructions ATK 200517 for aedes_r195
+
+%% Update these files for each dataset:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%Set up tape and queue parameters
 tapedir = 1; % negative is feed reel starts from high section numbers
-startSectionID = 1026;
-endSectionID = 1030;
-skipList = [73, 91,143,184,186, 187, 192,193,194,202, 217,276,445, 448, 493, 496, 509,548,558,565,566,567,568,572,580,586,594,674,745,1040,1063,1067,1082,1100,1112,1114,1115];
-% partial 191, 195, 99 (debris)
-write_json = 1;
-plot_imgs = 1;
+flip = true; % whether or not a 180 degree flip is necessary for stainer images vs TEMCA. 
+startSectionID = 1; % BUG - this code currently does not work with section 0 (due to 1-idx bs). 
+endSectionID = 10;
+skipList = []; % Insert section numbers to skip. All sections included need validated annotations.
+write_json = 1; % Flag to write the queue file
+plot_imgs = 1; % Flag to plot and save preview images
 sectionList = startSectionID:endSectionID;
 sectionList = setdiff(sectionList,skipList,'stable');
+% master path should contain stainer images, masks and annotations folders, etc.
+masterPath = '/n/groups/htem/temcagt/datasets/190311megAedes6Flower11Fupper_r195/roi_generation';
+
+% ROI_mask_file drawed using the GUI 
+ROI_mask_file = [masterPath '/masks/' '1x1_testROI_mask_sect4503.txt']; 
+
+% section_mask_ref is the section_mask annotation from the section you
+% produced the ROI mask on. Copy this from the annotations dir.
+% eg. `cp annotations/SECTNUM.txt masks/section_mask_ref_SECTNUM.txt`
+section_mask_ref_file = [masterPath '/masks/' 'section_mask_reference_sect4503.txt'];
+
+% same slot mask as used in annotation GUI
+slot_mask_file = [masterPath '/masks/' 'slot_mask.txt'];
+
+% same section masks as used in annotation GUI
+section_mask_file = [masterPath '/masks/' 'section_mask_aedes_km-brcoms.txt'];
+
+% focus mask (if used). leave as [] if not used 
+focus_mask_file = [];%[masterPath '/masks/' 'focus_mask.txt'];
 
 
+%% DO NOT EDIT PAST HERE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Set paths and load mask and image
-% master path
-if ispc
-    masterPath = '/n/groups/htem/temcagt/datasets/cb2';
-    %masterPath = '/home/lab/170601_P26_Emx_SHH_wt2_r130';
-elseif isunix
-    masterPath = '/n/groups/htem/temcagt/datasets/cb2'; 
-    %masterPath = '/home/lab/170601_P26_Emx_SHH_wt2_r130';
-else
-    disp('OS error - not Win or Unix');
-end
-queue_output = [masterPath '/queues/' date '_' num2str(startSectionID) '-' num2str(endSectionID) '.json'];
-%queue_output = [masterPath '/queues/' date '_reimage_list.json']; % Only for reimaging
 
+% queue_output is name of queue json
+queue_output = [masterPath '/queues/' date '_' num2str(startSectionID) '-' num2str(endSectionID) '.json'];
 
 % output of annotation, in txt
-outputPath = [masterPath '/annotations']; % saves annotated relative positions to txt, for each individual section
-if exist(outputPath,'dir')~=7
-    mkdir(outputPath);
-end
-%setappdata(hfig,'outputPath',outputPath);
+annotPath = [masterPath '/annotations']; % saves annotated relative positions to txt, for each individual section
 
-% image folder
+% formatted stainer image links folder
 imPath = [masterPath '/img_links']; % contains images of individual sections
-%ParseImageDir(hfig,imPath);
 
 % start writing json file (will continue in for loop over sections)
 if write_json == 1
@@ -44,19 +61,6 @@ if write_json == 1
 end
 
 %% Load Mask Files
-
-%% TODO: section_mask_ref
-%section_mask_ref_file = [masterPath '/masks/' 'sect1000_ref.txt'];
-%% TODO: ROI_mask
-%ROI_mask_file = [masterPath '/masks/' 'ROI_mask_ref_sect1000.txt']; 
-
-%% TODO: slot_mask
-%slot_mask_file = [masterPath '/masks/' 'slot_mask_180628.txt'];
-%% TODO: section_mask
-%section_mask_file = [masterPath '/masks/' 'section_masks_1000_180725.txt'];
-%%
-
-focus_mask_file = [];%[masterPath '/masks/' 'focus_mask.txt'];
 
 % Get orig section mask vertices (masks format)
 fid3 = fopen(ROI_mask_file);
@@ -117,7 +121,7 @@ end
 problematic = zeros(length(sectionList),1);
 verified = zeros(length(sectionList),1);
 for i = 1:length(sectionList)
-    f = fullfile(outputPath,[num2str(sectionList(i)),'.txt']);
+    f = fullfile(annotPath,[num2str(sectionList(i)),'.txt']);
     fid = fopen(f, 'rt');
     s = textscan(fid, '%s', 'delimiter', '\n');
     
@@ -145,8 +149,8 @@ if write_json == 1
 end
 
 for i = 1:length(sectionList)
-    [S(sectionList(i)),tf(sectionList(i))] = ScanText_GTA(sectionList(i),outputPath,slot_mask_file,section_mask_file, focus_mask_file);
-    f = fullfile(outputPath,[num2str(sectionList(i)),'.txt']);
+    [S(sectionList(i)),tf(sectionList(i))] = ScanText_GTA(sectionList(i),annotPath,slot_mask_file,section_mask_file, focus_mask_file);
+    f = fullfile(annotPath,[num2str(sectionList(i)),'.txt']);
     
     fid = fopen(f, 'rt');
     s = textscan(fid, '%s', 'delimiter', '\n');
@@ -163,11 +167,6 @@ for i = 1:length(sectionList)
     idx6 = find(strcmp(s{1}, 'SUCOF'), 1, 'first');
     focus = [];
     hasFocus = 0;
-    
-%     idx = find(strcmp(s{1},'SECTIONCOM(x,y,theta):'), 1, 'first');
-%     xyTH = dlmread(f,'',[idx 0 idx 2]);
-%     xy = xyTH(1:2);
-%     angle = xyTH(3); % note this is not accurate!
 
     idx5 = find(strcmp(s{1}, 'FLAGS'), 1, 'first');
     flags = dlmread(f,'',[idx5+1 0 idx5+1 1]);
@@ -175,23 +174,12 @@ for i = 1:length(sectionList)
     isverified = flags(2);
     fclose(fid);
     
-    %% Determine scale and center of slot
-    % assume convention of 8 sided mask, starting from bottom left
-    % 170703_slot_mask
-    
-    % find edges of slot in units of pixels
-    xL = (slot(1,1)+slot(2,1))/2;
-    xR = (slot(5,1)+slot(6,1))/2;
-    yT = (slot(3,2)+slot(4,2))/2;
-    yB = (slot(7,2)+slot(8,2))/2;
-    
-    slot_center_pxl = [(xR+xL)/2 (yB+yT)/2];
-    slot_size_pxl = [(xR-xL) (yB-yT)];
+    %% Determine scale and center of slot 
+    num_pts = size(slot,1);     
+    slot_center_pxl = sum(slot,1)/num_pts;
     pxl_size = 5.3; %um, point grey camera
     pxl_scale = 1000/pxl_size/1e6; % pxls per nm 
-    %pxl_scale = [slot_size(1)/2 slot_size(2)/1.5]; % pixels per mm
-    
-    
+
     %% Place ROI
     
     disp(['Sect ' num2str(sectionList(i)) ': ']);
@@ -237,7 +225,10 @@ for i = 1:length(sectionList)
     
     % Convert ROI to nm and slot-centric coordinates 
     ROInm = round((ROI_crop-slot_center_pxl)./pxl_scale); 
-    ROInm = -ROInm; % 180 degree rotation to match temcaGT vs staining image orientation.
+    
+    if flip
+        ROInm = -ROInm; % 180 degree rotation to match temcaGT vs staining image orientation.
+    end
     
     % Calculate bounding box 
     right_edge_nm = max(ROInm(:,1)); 
@@ -267,36 +258,6 @@ for i = 1:length(sectionList)
         else
             fprintf(fileID,', ');
         end
-    %{    
-    if write_json == 1
-        if tapedir == 1
-            fprintf(fileID,['"' num2str(sectionList(i)) '": {"rois": [{"width": ' num2str(width_nm) ', "right": ' ...
-                sprintf('%0.0f',right_edge_nm) ', "top": ' sprintf('%0.0f',top_edge_nm)...
-                ', "height": ' num2str(height_nm) '}]']);
-        elseif tapedir == -1
-                fprintf(fileID,['"' num2str(sectionList(i)) '": {"rois": [{"width": ' num2str(width_nm) ', "left": ' ...
-                    sprintf('%0.0f',right_edge_nm) ', "bottom": ' sprintf('%0.0f',top_edge_nm)...
-                    ', "height": ' num2str(height_nm) '}]']);
-        end
-        if hasFocus
-        fprintf(fileID,[',"focus_points":[[' num2str(focus_nm(1)) ',' num2str(focus_nm(2)) ']]']);
-        end    
-        fprintf(fileID,'}');
-        if sectionList(i) == sectionList(end)
-            fprintf(fileID,'}');
-        else
-            fprintf(fileID,', ');
-        end        
-      %}  
-        %{
-fprintf(fileID,['"' num2str(sectionList(i)) '": {"rois": [{"width": 100000, "center": [' ...
-    sprintf('%0.0f',1e6*roi_TR_nm_fudged(1)) ', ' sprintf('%0.0f',1e6*roi_TR_nm(2)_fudged) '], "height": 100000}]}']);
-if sectionList(i) == endSectionID
-    fprintf(fileID,'}');
-else
-    fprintf(fileID,', ');
-end
-        %}       
     end
     %% Plot and save annotation image
     
@@ -318,16 +279,12 @@ end
         end
         
         % plot section outline
-        section_outline = vertcat(section, section(1,:));
-        %section_outline = vertcat(section_mask_orig, section_mask_orig(1,:));       
+        section_outline = vertcat(section, section(1,:));     
         plot(section_outline(:,1),section_outline(:,2),'w-','Linewidth',2); 
-        %plot(section_outline(:,1),section_outline(:,2),'w-','Linewidth',2)
         
         % plot ROI outline
-        %ROI_outline = vertcat(ROIvert_mask, ROIvert_mask(1,:));
         ROI_outline = vertcat(ROI_crop, ROI_crop(1,:));
-        %ROI_outline = vertcat(section_mask_calc, section_mask_calc(1,:)); 
-        plot(ROI_outline(:,1),ROI_outline(:,2),'b-','Linewidth',2)
+        plot(ROI_outline(:,1),ROI_outline(:,2),'r-','Linewidth',2)
         
         %plot slot outline
         pgon = polyshape((slot(:,1))',(slot(:,2))');
@@ -336,29 +293,14 @@ end
         timestamp = datetime('now');
         title(['sect ' num2str(sectionList(i)) ' ' datestr(timestamp)]);
         hold off;
-        %pause(1)
-        %{
-        % plot ROI
-        % generate ROI for plotting in annot images
-        % move backwards from values sent to json file
-        %corner_pxl = -([right_edge_nm top_edge_nm]-fudge_factor)*pxl_scale + slot_center_pxl;
-        corner_pxl = ([right_edge_nm top_edge_nm]-fudge_factor)*pxl_scale + slot_center_pxl;
-        
 
-        if tapedir == 1
-        rect_ROI = vertcat(corner_pxl,corner_pxl+[0 -height_nm*pxl_scale],...
-            corner_pxl+[width_nm*pxl_scale -height_nm*pxl_scale],...
-            corner_pxl+[width_nm*pxl_scale 0], corner_pxl);
-        elseif tapedir == -1
-        rect_ROI = vertcat(corner_pxl,corner_pxl+[0 height_nm*pxl_scale],...
-            corner_pxl+[width_nm*pxl_scale height_nm*pxl_scale],...
-            corner_pxl+[width_nm*pxl_scale 0], corner_pxl);
-        end
-        plot(rect_ROI(:,1),rect_ROI(:,2),'c-','Linewidth',3);
-        
-            %}
         F = frame2im(getframe(hfig1));%im2frame(C);
-        img_save_path = [masterPath '/annot_imgs/' num2str(sectionList(i)) '.png'];
+        previewPath = fullfile(masterPath,'annot_imgs');
+        if exist(previewPath,'dir')~=7
+            mkdir(previewPath);
+        end
+        img_save_path = [previewPath '/' num2str(sectionList(i)) '.png'];
+        
         imwrite(F,img_save_path);
     
     end
