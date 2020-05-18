@@ -13,7 +13,7 @@
 %%Set up tape and queue parameters
 tapedir = 1; % negative is feed reel starts from high section numbers
 flip = true; % whether or not a 180 degree flip is necessary for stainer images vs TEMCA. 
-startSectionID = 1; % BUG - this code currently does not work with section 0 (due to 1-idx bs). 
+startSectionID = 0; % BUG - this code currently does not work with section 0 (due to 1-idx bs). 
 endSectionID = 10;
 skipList = []; % Insert section numbers to skip. All sections included need validated annotations.
 write_json = 1; % Flag to write the queue file
@@ -149,7 +149,9 @@ if write_json == 1
 end
 
 for i = 1:length(sectionList)
-    [S(sectionList(i)),tf(sectionList(i))] = ScanText_GTA(sectionList(i),annotPath,slot_mask_file,section_mask_file, focus_mask_file);
+    
+    %[S(sectionList(i)),tf(sectionList(i))] = ScanText_GTA(sectionList(i),annotPath,slot_mask_file,section_mask_file, focus_mask_file);
+   
     f = fullfile(annotPath,[num2str(sectionList(i)),'.txt']);
     
     fid = fopen(f, 'rt');
