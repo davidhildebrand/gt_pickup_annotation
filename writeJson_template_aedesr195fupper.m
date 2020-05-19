@@ -14,7 +14,7 @@
 tapedir = 1; % negative is feed reel starts from high section numbers
 flip = true; % whether or not a 180 degree flip is necessary for stainer images vs TEMCA. 
 startSectionID = 27; % BUG - this code currently does not work with section 0 (due to 1-idx bs). 
-endSectionID = 29;
+endSectionID = 500;
 skipList = []; % Insert section numbers to skip. All sections included need validated annotations.
 write_json = 1; % Flag to write the queue file
 plot_imgs = 0; % Flag to plot and save preview images
@@ -248,7 +248,7 @@ for i = 1:length(sectionList)
     height_nm = bottom_edge_nm - top_edge_nm;
     
     %% Write json entry
-    if write_json == 1 && ~isproblematic%str2double(find_problematic(i))
+    if write_json == 1 %&& ~isproblematic%str2double(find_problematic(i))
         vertices=', "vertices": [';
         for vertex = ROInm'
             vertices=[vertices '[' num2str((vertex(1)-(right_edge_nm-width_nm))/width_nm) ', ' num2str((vertex(2)-top_edge_nm)/height_nm) '], '];
