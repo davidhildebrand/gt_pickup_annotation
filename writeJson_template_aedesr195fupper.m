@@ -13,18 +13,18 @@
 %%Set up tape and queue parameters
 tapedir = 1; % negative is feed reel starts from high section numbers
 flip = true; % whether or not a 180 degree flip is necessary for stainer images vs TEMCA. 
-startSectionID = 0; % BUG - this code currently does not work with section 0 (due to 1-idx bs). 
-endSectionID = 10;
+startSectionID = 27; % BUG - this code currently does not work with section 0 (due to 1-idx bs). 
+endSectionID = 500;
 skipList = []; % Insert section numbers to skip. All sections included need validated annotations.
 write_json = 1; % Flag to write the queue file
-plot_imgs = 1; % Flag to plot and save preview images
+plot_imgs = 0; % Flag to plot and save preview images
 sectionList = startSectionID:endSectionID;
 sectionList = setdiff(sectionList,skipList,'stable');
 % master path should contain stainer images, masks and annotations folders, etc.
-masterPath = '/n/groups/htem/temcagt/datasets/190311megAedes6Flower11Fupper_r195/roi_generation';
+masterPath = '~/htem/temcagt/datasets/190311megAedes6Flower11Fupper_r195/roi_generation';
 
 % ROI_mask_file drawed using the GUI 
-ROI_mask_file = [masterPath '/masks/' '1x1_testROI_mask_sect4503.txt']; 
+ROI_mask_file = [masterPath '/masks/' 'ROI_mask_section4503.txt']; 
 
 % section_mask_ref is the section_mask annotation from the section you
 % produced the ROI mask on. Copy this from the annotations dir.
@@ -46,7 +46,7 @@ focus_mask_file = [];%[masterPath '/masks/' 'focus_mask.txt'];
 %% Set paths and load mask and image
 
 % queue_output is name of queue json
-queue_output = [masterPath '/queues/' date '_' num2str(startSectionID) '-' num2str(endSectionID) '.json'];
+queue_output = [masterPath '/queues/' date '_' num2str(startSectionID) '-' num2str(endSectionID) 'withproblems.json'];
 
 % output of annotation, in txt
 annotPath = [masterPath '/annotations']; % saves annotated relative positions to txt, for each individual section
@@ -131,12 +131,19 @@ for i = 1:length(sectionList)
     verified(i) = 1;
     fclose(fid);
 end
+
 problems = sectionList(find(problematic==1));
 unverified = sectionList(find(verified==0));
 
-sectionList = setdiff(sectionList,problems,'stable');
+%sectionList = setdiff(sectionList,problems,'stable');
+
+if ~isempty(problems) > 0
+    disp(['WARNING - problem sections: ' num2str(problems)]);
+    disp('Adding them to the queue anyway...')
+end
 
 disp(['Problem sections: ' num2str(problems)]);
+
 if ~isempty(unverified) > 0
     error(['Unverified sections: ' num2str(unverified)]);
 end
@@ -241,7 +248,7 @@ for i = 1:length(sectionList)
     height_nm = bottom_edge_nm - top_edge_nm;
     
     %% Write json entry
-    if write_json == 1 && ~isproblematic%str2double(find_problematic(i))
+    if write_json == 1 %&& ~isproblematic%str2double(find_problematic(i))
         vertices=', "vertices": [';
         for vertex = ROInm'
             vertices=[vertices '[' num2str((vertex(1)-(right_edge_nm-width_nm))/width_nm) ', ' num2str((vertex(2)-top_edge_nm)/height_nm) '], '];
