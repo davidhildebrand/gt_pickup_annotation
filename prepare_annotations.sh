@@ -2,6 +2,8 @@
 mkdir img_links
 mkdir masks
 mkdir annotations
+mkdir queues
+mkdir annot_imgs
 
 imageExtension=tif
 firstFileName=`ls $1/*section.$imageExtension | head -n 1`
