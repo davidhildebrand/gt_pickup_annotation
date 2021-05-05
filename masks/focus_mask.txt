@@ -1,0 +1,2 @@
+row: vertices; col: x & y coordinate
+714.84 348.17
