@@ -22,7 +22,10 @@ done
 
 #for i in `seq 100009 100018`; do j=$((100017 - $i)); mv img_links/$i.png img_links/$j.png; echo renaming $i as $j; done
 
-cp /home/lab/gut/masks/dummySectionMask.txt ./masks/dummySectionMask.txt
-cp /home/lab/gut/masks/slotMask.txt ./masks/slotMask.txt
-cp /home/lab/gut/masks/focus_mask.txt ./masks/focus_mask.txt
+#cp /home/lab/gut/masks/dummySectionMask.txt ./masks/dummySectionMask.txt
+#cp /home/lab/gut/masks/slotMask.txt ./masks/slotMask.txt
+#cp /home/lab/gut/masks/focus_mask.txt ./masks/focus_mask.txt
 
+cp /home/mk604/repos/gt_pickup_annotation/masks/section_mask.txt ./masks/section_mask.txt
+cp /home/mk604/repos/gt_pickup_annotation/masks/slotMask.txt ./masks/slotMask.txt
+cp /home/mk604/repos/gt_pickup_annotation/masks/focus_mask.txt ./masks/focus_mask.txt
