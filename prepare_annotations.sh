@@ -26,6 +26,6 @@ done
 #cp /home/lab/gut/masks/slotMask.txt ./masks/slotMask.txt
 #cp /home/lab/gut/masks/focus_mask.txt ./masks/focus_mask.txt
 
-cp /home/mk604/repos/gt_pickup_annotation/masks/section_mask.txt ./masks/section_mask.txt
-cp /home/mk604/repos/gt_pickup_annotation/masks/slotMask.txt ./masks/slotMask.txt
-cp /home/mk604/repos/gt_pickup_annotation/masks/focus_mask.txt ./masks/focus_mask.txt
+cp /repos/gt_pickup_annotation/masks/section_mask.txt ./masks/section_mask.txt
+cp /repos/gt_pickup_annotation/masks/slotMask.txt ./masks/slotMask.txt
+cp /repos/gt_pickup_annotation/masks/focus_mask.txt ./masks/focus_mask.txt
