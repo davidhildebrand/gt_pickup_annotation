@@ -34,13 +34,13 @@ axis image
 if ispc
     %masterPath = '/home/lab/vnc1_r066/roi_generation';
     %masterPath = '/home/zachd/mounts/cb2';
-    masterPath = '/n/groups/htem/temcagt/datasets/dcn1_r131/roi_generation';
+    masterPath = '/n/groups/htem/temcagt/datasets/201216_flycns_r1015_140/roi_generation_tutorial/';
     %% TODO: set masterPath %%
 elseif isunix
     %masterPath = '/home/lab/vnc1_r066/roi_generation';
     %masterPath = '/home/zachd/mounts/cb2';
     %masterPath = '/home/zachd/mounts/test'
-    masterPath = '/n/groups/htem/temcagt/datasets/dcn1_r131/roi_generation';
+    masterPath = '/n/groups/htem/temcagt/datasets/201216_flycns_r1015_140/roi_generation_tutorial/';
 else
     disp('OS error - not Win or Unix');
 end
@@ -50,7 +50,7 @@ slot_mask_file = [masterPath '/masks/' 'slotMask.txt'];
 % slot_mask_file = [masterPath '/masks/' 'calibration_L_sect70.txt'];
 % slot_mask_file = [masterPath '/masks/' 'ROI_mask_ref_sect1000.txt'];
 %% TODO: Set slot_mask 
-section_mask_file = [masterPath '/masks/' 'dummySectionMask.txt'];
+section_mask_file = [masterPath '/masks/' 'section_mask.txt'];
 %section_mask_file = [masterPath '/masks/' 'Section.txt'];
 % section_mask_file = [masterPath '/masks/' 'sect70_ref.txt'];
 %section_mask_file = [masterPath '/masks/' 'section_3_mask.txt'];
@@ -72,8 +72,7 @@ setappdata(hfig,'outputPath',outputPath);
 
 % image folder
 %% TODO: check to see that this path is correct
-imPath = [masterPath '/2_img_links']; % contains images of individual sections | normally imglinks
-disp(imPath);
+imPath = [masterPath '/img_links']; % contains images of individual sections | normally imglinks
 ParseImageDir(hfig,imPath);
 
 
@@ -100,7 +99,7 @@ LoadNewMask(hfig,slot_mask_file,section_mask_file, focus_mask_file);
    
 %% Create UI controls
 set(gcf,'DefaultUicontrolUnits','normalized'); slot_mask_file = [masterPath '/masks/' 'slotMask.txt'];
-section_mask_file = [masterPath '/masks/' 'dummySectionMask.txt'];
+section_mask_file = [masterPath '/masks/' 'sectionMask_503.txt'];
 %section_mask_file = [masterPath '/masks/' 'section_3_mask.txt'];
 focus_mask_file = [masterPath '/masks/' 'focus_mask.txt'];
 set(gcf,'defaultUicontrolBackgroundColor',[1 1 1]);

@@ -2,23 +2,23 @@
 %% ATK 170703
 tapedir = -1; % negative is feed reel starts from high section numbers
 flip = false; % whether or not a 180 degree flip is necessary for stainer images vs TEMCA.
-startSectionID = 1;
-endSectionID = 112;
+startSectionID = 16;
+endSectionID = 57;
 skipList = [];
 % partial 191, 195, 99 (debris)
 write_json = 1;
 plot_imgs = 1;
-sectionList = [16 17 19 36 37 38 52 54 57 71 72 77 88 89 90 110 111 112];
+sectionList = [16 17 19 23 25 36 37 38 52 54 57];
 sectionList = setdiff(sectionList,skipList,'stable');
 
 
 %% Set paths and load mask and image
 % master path
 if ispc
-    masterPath = '/n/groups/htem/temcagt/datasets/201216_flycns_r1015_140/roi_generation/';
+    masterPath = '/n/groups/htem/temcagt/datasets/201216_flycns_r1015_140/roi_generation';
     %masterPath = '/home/lab/170601_P26_Emx_SHH_wt2_r130';
 elseif isunix
-    masterPath = '/n/groups/htem/temcagt/datasets/201216_flycns_r1015_140/roi_generation/'; 
+    masterPath = '/n/groups/htem/temcagt/datasets/201216_flycns_r1015_140/roi_generation'; 
     %masterPath = '/home/lab/170601_P26_Emx_SHH_wt2_r130';
 else
     disp('OS error - not Win or Unix');
@@ -35,7 +35,7 @@ end
 %setappdata(hfig,'outputPath',outputPath);
 
 % image folder
-imPath = [masterPath '/renumbered_stainer_images']; % contains images of individual sections
+imPath = [masterPath '/img_links']; % contains images of individual sections
 %ParseImageDir(hfig,imPath);
 
 % start writing json file (will continue in for loop over sections)
@@ -241,7 +241,7 @@ for i = 1:length(sectionList)
     
     ROIpoly = polyshape(ROIvert(:,1), ROIvert(:,2));
     slotpoly = polyshape(slot(:,1),slot(:,2));
-    ROI_crop_poly = intersect(ROIpoly, slotpoly);
+    ROI_crop_poly = ROIpoly;
     ROI_crop = ROI_crop_poly.Vertices;
     
     % Convert ROI to nm and slot-centric coordinates 

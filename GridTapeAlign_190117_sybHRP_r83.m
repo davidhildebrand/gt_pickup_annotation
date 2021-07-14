@@ -581,6 +581,7 @@ if ~isempty(hpoly) % (first load exception)
     setappdata(hfig,'M',M);
 end
 
+disp(M)
 % update S data (relangle is updated directly through Rotation function)
 S.slot.translation = GetCenterPos(M(1).pos) - GetCenterPos(M(1).pos_init);
 S.section.translation = GetCenterPos(M(2).pos) - GetCenterPos(M(2).pos_init);

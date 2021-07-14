@@ -73,9 +73,7 @@ setappdata(hfig,'outputPath',outputPath);
 % image folder
 %% TODO: check to see that this path is correct
 imPath = [masterPath '/2_img_links']; % contains images of individual sections | normally imglinks
-disp(imPath);
 ParseImageDir(hfig,imPath);
-
 
 %% Init section
 % load first section
@@ -83,6 +81,7 @@ disp('Load first section')
 i_im = 1;
 setappdata(hfig,'i_im',i_im);
 secID = GetSectionIDfromCounter(hfig,i_im);
+disp(outputPath)
 S = ScanText_GTA(secID,outputPath,slot_mask_file,section_mask_file, focus_mask_file);
 setappdata(hfig,'S',S);
 LoadNewMask(hfig,slot_mask_file,section_mask_file, focus_mask_file);
@@ -100,7 +99,7 @@ LoadNewMask(hfig,slot_mask_file,section_mask_file, focus_mask_file);
    
 %% Create UI controls
 set(gcf,'DefaultUicontrolUnits','normalized'); slot_mask_file = [masterPath '/masks/' 'slotMask.txt'];
-section_mask_file = [masterPath '/masks/' 'dummySectionMask.txt'];
+section_mask_file = [masterPath '/masks/' 'sectionMask_503.txt'];
 %section_mask_file = [masterPath '/masks/' 'section_3_mask.txt'];
 focus_mask_file = [masterPath '/masks/' 'focus_mask.txt'];
 set(gcf,'defaultUicontrolBackgroundColor',[1 1 1]);
