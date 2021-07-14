@@ -214,46 +214,40 @@ end
 end
 
 function pushbutton_getdatadir_Callback(hObject,~)
-hfig = getParentFigure(hObject);
-start_path = getappdata(hfig,'dataPath');
-if isempty(start_path) 
-    gt_dir = '/n/groups/htem/temcagt/datasets';
-    if exist(gt_dir,'dir')
-        start_path = gt_dir;
+    hfig = getParentFigure(hObject);
+    start_path = getappdata(hfig,'dataPath');
+    if isempty(start_path) 
+        gt_dir = '/n/groups/htem/temcagt/datasets';
+        if exist(gt_dir,'dir')
+            start_path = gt_dir;
+        end
     end
-end
-folder_name = uigetdir(start_path,'Choose dataset folder');
+    folder_name = uigetdir(start_path,'Choose dataset folder');
 
-global h_datadir
-folder_name = CheckDataDir(folder_name);
+    global h_datadir
+    folder_name = CheckDataDir(folder_name);
 
-if folder_name~=0
-    setappdata(hfig,'dataLoaded',true);
-    h_datadir.String = folder_name;
-    setappdata(hfig,'dataPath',folder_name);   
-    setappdata(hfig,'imPath',[folder_name '/img_links']);
-    setappdata(hfig,'outputPath',[folder_name '/annotations']);   
-    
-    ParseImageDir(hfig,getappdata(hfig,'imPath'));
-    loadFirstSection(hfig);
-    secID = getappdata(hfig,'secID');
-
-    P = LoadPaths(hfig);
-    [S,tf] = ScanText_GTA(secID,P.outputPath,P.slot_mask_file,P.ROI_mask_file);
-    setappdata(hfig,'S',S);
-    LoadImage(hfig,getappdata(hfig, 'i_im'));
-end
+    if folder_name~=0
+        h_datadir.String = folder_name;
+        setappdata(hfig,'dataPath',folder_name);   
+        setappdata(hfig,'imPath',[folder_name '/img_links']);
+        setappdata(hfig,'outputPath',[folder_name '/annotations']);   
+        ParseImageDir(hfig,getappdata(hfig,'imPath'));
+        loadFirstSection(hfig);     
+        setappdata(hfig,'dataLoaded',true);
+    end
 end
 
 function loadFirstSection(hObject,~)
-hfig = getParentFigure(hObject);
-i_im = 1;
-setappdata(hfig,'i_im',i_im);
-secID = GetSectionIDfromCounter(hfig,i_im);
-P = LoadPaths(hfig);
-S = ScanText_GTA(secID,P.outputPath,P.slot_mask_file,P.ROI_mask_file);
-setappdata(hfig,'S',S);
-LoadNewMask(hfig,P.slot_mask_file,P.ROI_mask_file);
+    hfig = getParentFigure(hObject);
+    i_im = 1;
+    setappdata(hfig,'i_im',i_im);
+    secID = GetSectionIDfromCounter(hfig,i_im);
+    P = LoadPaths(hfig);
+    S = ScanText_GTA(secID,P.outputPath,P.slot_mask_file,P.ROI_mask_file);
+    setappdata(hfig,'S',S);
+    LoadImage(hfig,getappdata(hfig, 'i_im'));
+%LoadNewMask(hfig,P.slot_mask_file,P.ROI_mask_file);
 end
 
 %% row 2: current section
@@ -587,7 +581,9 @@ end
 
 function LoadImage(hfig,i_im)
 % save mask positions for previous image
-SaveCurrentMasks(hfig);
+if getappdata(hfig,'dataLoaded') == true
+    SaveCurrentMasks(hfig);
+end 
 
 % load new file
 setappdata(hfig,'i_im',i_im); % set new image index
