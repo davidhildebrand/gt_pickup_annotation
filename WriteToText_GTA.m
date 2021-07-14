@@ -48,20 +48,6 @@ formatSpec = '%4.2f %4.2f %4.2f\n';
 fprintf(fileID,formatSpec,S.section.translation(1),S.section.translation(2),S.section.rotation);
 fprintf(fileID,'\n');
 
-
-fprintf(fileID,'FOCUS\n');
-for i = 1:size(M(3).pos,1)
-    formatSpec = '%4.2f %4.2f\n';
-    fprintf(fileID,formatSpec,M(3).pos(i,1),M(3).pos(i,2));
-end
-fprintf(fileID,'SUCOF\n');
-fprintf(fileID,'\n');
-
-fprintf(fileID,'FOCUSCOM(x,y,theta):\n');
-formatSpec = '%4.2f %4.2f %4.2f\n';
-fprintf(fileID,formatSpec,S.focus.translation(1),S.focus.translation(2),S.focus.rotation);
-fprintf(fileID,'\n');
-
 [~,name,ext] = fileparts(S.slot_mask_file);
 fprintf(fileID,['slot mask file: ',name,ext,'\n']);
 [~,name,ext] = fileparts(S.section_mask_file);
