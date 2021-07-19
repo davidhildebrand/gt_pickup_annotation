@@ -1,9 +1,10 @@
 
 %% ATK 170703
 tapedir = -1; % negative is feed reel starts from high section numbers
-flip = false; % whether or not a 180 degree flip is necessary for stainer images vs TEMCA.
+flip = true; % whether or not a 180 degree flip is necessary for stainer images vs TEMCA.
+crop_ROI = true; %crops out ROI edges that intersects with the slot edges and overlap tape
 startSectionID = 0;
-endSectionID = 6;
+endSectionID = 150;
 skipList = [];
 % partial 191, 195, 99 (debris)
 write_json = 1;
@@ -15,17 +16,17 @@ sectionList = setdiff(sectionList,skipList,'stable');
 %% Set paths and load mask and image
 % master path
 if ispc
-    masterPath = '/n/groups/htem/temcagt/datasets/201216_flycns_r1015_140/roi_generation_tutorial';
+    masterPath = '/n/groups/htem/temcagt/datasets/dcn1_r131/roi_generation';
     %masterPath = '/home/lab/170601_P26_Emx_SHH_wt2_r130';
 elseif isunix
-    masterPath = '/n/groups/htem/temcagt/datasets/201216_flycns_r1015_140/roi_generation_tutorial'; 
+    masterPath = '/n/groups/htem/temcagt/datasets/dcn1_r131/roi_generation'; 
     %masterPath = '/home/lab/170601_P26_Emx_SHH_wt2_r130';
 else
     disp('OS error - not Win or Unix');
 end
-queue_output = [masterPath '/queues/' date '_' num2str(startSectionID) '-' num2str(endSectionID) '.json'];
+queue_output = [masterPath '/queues/' date '_888' num2str(startSectionID) '-' num2str(endSectionID) '.json'];
 %queue_output = [masterPath '/queues/' date '_reimage_list.json']; % Only for reimaging
-
+disp(queue_output)
 
 % output of annotation, in txt
 outputPath = [masterPath '/annotations']; % saves annotated relative positions to txt, for each individual section
@@ -35,7 +36,7 @@ end
 %setappdata(hfig,'outputPath',outputPath);
 
 % image folder
-imPath = [masterPath '/img_links']; % contains images of individual sections
+imPath = [masterPath '/2_img_links']; % contains images of individual sections
 %ParseImageDir(hfig,imPath);
 
 % start writing json file (will continue in for loop over sections)
@@ -198,8 +199,7 @@ for i = 1:length(sectionList)
     %% Place ROI
     
     disp(['Sect ' num2str(sectionList(i)) ': ']);
-    
-    %{
+ %{   
     % Get ROI mask vertices (masks format)
     fid2 = fopen(ROI_mask_file, 'rt');
     ROI_ref = dlmread(ROI_mask_file,' ',1,0);
@@ -241,7 +241,11 @@ for i = 1:length(sectionList)
     
     ROIpoly = polyshape(ROIvert(:,1), ROIvert(:,2));
     slotpoly = polyshape(slot(:,1),slot(:,2));
-    ROI_crop_poly = ROIpoly;
+    if crop_ROI
+        ROI_crop_poly = intersect(ROIpoly, slotpoly);
+    else
+        ROI_crop_poly = ROIpoly;
+    end
     ROI_crop = ROI_crop_poly.Vertices;
     
     % Convert ROI to nm and slot-centric coordinates 
@@ -331,19 +335,19 @@ end
         % plot section outline
         section_outline = vertcat(section, section(1,:));
         %section_outline = vertcat(section_mask_orig, section_mask_orig(1,:));       
-        plot(section_outline(:,1),section_outline(:,2),'w-','Linewidth',2); 
+        %plot(section_outline(:,1),section_outline(:,2),'w-','Linewidth',2); 
         %plot(section_outline(:,1),section_outline(:,2),'w-','Linewidth',2)
         
+        %plot slot outline
+        pgon = polyshape((slot(:,1))',(slot(:,2))');
+        plot(pgon,'FaceColor','none','EdgeColor','w','LineWidth', 2);
+
         % plot ROI outline
         %ROI_outline = vertcat(ROIvert_mask, ROIvert_mask(1,:));
         ROI_outline = vertcat(ROI_crop, ROI_crop(1,:));
         %ROI_outline = vertcat(section_mask_calc, section_mask_calc(1,:)); 
         plot(ROI_outline(:,1),ROI_outline(:,2),'c-','Linewidth',2)
         
-        %plot slot outline
-        pgon = polyshape((slot(:,1))',(slot(:,2))');
-        plot(pgon,'FaceColor','none','EdgeColor','w','LineWidth', 2);
-
         timestamp = datetime('now');
         title(['sect ' num2str(sectionList(i)) ' ' datestr(timestamp)]);
         hold off;
