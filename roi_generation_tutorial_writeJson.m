@@ -3,8 +3,8 @@
 tapedir = -1; % negative is feed reel starts from high section numbers
 flip = true; % whether or not a 180 degree flip is necessary for stainer images vs TEMCA.
 crop_ROI = true; %crops out ROI edges that intersects with the slot edges and overlap tape
-startSectionID = 0;
-endSectionID = 150;
+startSectionID = 250;
+endSectionID = 250;
 skipList = [];
 % partial 191, 195, 99 (debris)
 write_json = 1;
@@ -24,7 +24,7 @@ elseif isunix
 else
     disp('OS error - not Win or Unix');
 end
-queue_output = [masterPath '/queues/' date '_888' num2str(startSectionID) '-' num2str(endSectionID) '.json'];
+queue_output = [masterPath '/queues/' date '_' num2str(startSectionID) '-' num2str(endSectionID) '.json'];
 %queue_output = [masterPath '/queues/' date '_reimage_list.json']; % Only for reimaging
 disp(queue_output)
 
@@ -122,7 +122,11 @@ problematic = zeros(length(sectionList),1);
 verified = zeros(length(sectionList),1);
 for i = 1:length(sectionList)
     f = fullfile(outputPath,[num2str(sectionList(i)),'.txt']);
-    fid = fopen(f, 'rt');
+    if isfile(f)
+        fid = fopen(f, 'rt');
+    else 
+        disp([num2str(sectionList(i)) '.txt does not exist']);
+    end
     s = textscan(fid, '%s', 'delimiter', '\n');
     
     idx5 = find(strcmp(s{1}, 'FLAGS'), 1, 'first');
