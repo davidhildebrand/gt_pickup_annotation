@@ -50,7 +50,7 @@ bwidth = 0.03;
 grid = 0:bwidth+0.001:1;
 
 %% handles
-global h_i_im h_secID h_datadir h_slot_mask h_ROI_mask h_probflag h_verflag h_status
+global h_i_im h_secID h_datadir h_slot_mask h_ROI_mask h_probflag h_verflag h_status 
 
 %% UI ----- tab one ----- (General)
 i_tab = 1;
@@ -67,34 +67,21 @@ i=i+n; n=12; % dataDir textbox
 h_datadir = uicontrol('Parent',tab{i_tab},'Style','edit',...
     'Position',[grid(i) yrow(i_row) bwidth*n rheight],...
     'String','Select Data Dir','enable', 'off');
-%{
-i=i+n; n=2; % getImageDir pushbutton
-uicontrol('Parent',tab{i_tab},'Style','pushbutton','String','Set image dir',...
-    'Position',[grid(i) yrow(i_row) bwidth*n rheight],...
-    'Callback',@pushbutton_getimagedir_Callback);
-
-i=i+n; n=6; % imageDir textbox
-h_imdir = uicontrol('Parent',tab{i_tab},'Style','edit',...
-    'Position',[grid(i) yrow(i_row) bwidth*n rheight],...
-    'String',imPath,'enable', 'off');
-%}
     
 %% UI row 2: masks
 i_row = 2; i = 1; n = 0;
-i=i+n; n=2; % Get mask dir pushbutton
-uicontrol('Parent',tab{i_tab},'Style','pushbutton','String','Set mask files',...
+i=i+n; n=2; % Set ROI mask dir pushbutton
+uicontrol('Parent',tab{i_tab},'Style','pushbutton','String','Set ROI mask',...
     'Position',[grid(i) yrow(i_row) bwidth*n rheight],...
-    'Callback',@pushbutton_getmasksdir_Callback);
-i=i+n; n=2; % ROI mask label
-uicontrol('Parent',tab{i_tab},'Style','text','String','ROI mask:',...
-    'Position',[grid(i) yrow(i_row)-dTextHt bwidth*n rheight],'HorizontalAlignment','right');
+    'Callback',@pushbutton_getROImasksdir_Callback, 'BackgroundColor',[0,1,0]);
 i=i+n; n=6; % ROI mask text box
 h_ROI_mask = uicontrol('Parent',tab{i_tab},'Style','edit',...
     'Position',[grid(i) yrow(i_row) bwidth*n rheight],...
     'String',ROI_mask_name,'enable', 'off');
-i=i+n; n=2; % Slot mask label
-uicontrol('Parent',tab{i_tab},'Style','text','String','slot mask:',...
-    'Position',[grid(i) yrow(i_row)-dTextHt bwidth*n rheight],'HorizontalAlignment','right');
+i=i+n; n=2; % Get mask dir pushbutton
+uicontrol('Parent',tab{i_tab},'Style','pushbutton','String','Set slot mask',...
+    'Position',[grid(i) yrow(i_row) bwidth*n rheight],...
+    'Callback',@pushbutton_getSLOTmasksdir_Callback, 'BackgroundColor',[0,1,1]);
 i=i+n; n=6; % Slot mask text box
 h_slot_mask = uicontrol('Parent',tab{i_tab},'Style','edit',...
     'Position',[grid(i) yrow(i_row) bwidth*n rheight],...
@@ -169,50 +156,6 @@ end
 %% ----- tab one ----- (General)
 
 %% row 1: file navigation
-function pushbutton_getimagedir_Callback(hObject,~)
-hfig = getParentFigure(hObject);
-start_path = getappdata(hfig,'imPath');
-folder_name = uigetdir(start_path,'Choose folder containing images of sections');
-
-global h_imdir
-if folder_name~=0
-    imPath = folder_name;
-    ParseImageDir(hfig,imPath);
-    h_imdir.String = imPath;    
-    
-    % Load first image
-    i_im = 1;
-    setappdata(hfig,'i_im',i_im);
-    LoadImage(hfig,i_im);
-end
-end
-
-function pushbutton_getmasksdir_Callback(hObject,~)
-hfig = getParentFigure(hObject);
-start_path = fullfile(getappdata(hfig,'dataPath'),'*.txt');
-[FileName1,PathName] = uigetfile(start_path,'Select the txt file for slot mask');
-slot_mask_file = fullfile(PathName,FileName1);
-[FileName2,PathName] = uigetfile(start_path,'Select the txt file for ROI mask');
-ROI_mask_file = fullfile(PathName,FileName2);
-
-if isequal(FileName1,0) || isequal(FileName2,0),
-    disp('User selected Cancel')
-else
-    try
-        LoadNewMask(hfig,slot_mask_file,ROI_mask_file);
-        % reload current image
-        i_im = getappdata(hfig,'i_im'); 
-        LoadImage(hfig,i_im);
-        
-        % (set path if didn't crash)
-        setappdata(hfig,'slot_mask_file',slot_mask_file);
-        setappdata(hfig,'ROI_mask_file',ROI_mask_file);
-    catch
-        errordlg('failed to load new masks');
-    end
-end
-end
-
 function pushbutton_getdatadir_Callback(hObject,~)
     hfig = getParentFigure(hObject);
     start_path = getappdata(hfig,'dataPath');
@@ -224,17 +167,90 @@ function pushbutton_getdatadir_Callback(hObject,~)
     end
     folder_name = uigetdir(start_path,'Choose dataset folder');
 
-    global h_datadir
+    global h_datadir h_status
     folder_name = CheckDataDir(folder_name);
 
     if folder_name~=0
         h_datadir.String = folder_name;
         setappdata(hfig,'dataPath',folder_name);   
         setappdata(hfig,'imPath',[folder_name '/img_links']);
-        setappdata(hfig,'outputPath',[folder_name '/annotations']);   
+        setappdata(hfig,'outputPath',[folder_name '/annotations']);  
         ParseImageDir(hfig,getappdata(hfig,'imPath'));
         loadFirstSection(hfig);     
         setappdata(hfig,'dataLoaded',true);
+        % try to load masks from datadir
+        ROI_mask_file = [folder_name '/masks/ROI_mask.txt'];
+        if exist(ROI_mask_file,'file')
+            setappdata(hfig, 'ROI_mask_file', ROI_mask_file);
+        end
+        slot_mask_file = [folder_name '/masks/slot_mask.txt'];
+        disp(slot_mask_file);
+        if exist(slot_mask_file,'file')
+            setappdata(hfig, 'slot_mask_file', slot_mask_file);
+        end
+        try 
+            LoadNewMask(hfig,slot_mask_file,ROI_mask_file);
+            hpoly = getappdata(hfig,'hpoly');
+            delete(hpoly);
+            DrawNewMask(hfig)
+            h_status.String = 'STATUS: Dataset and defauly masks loaded';
+        catch 
+            h_status.String = 'STATUS: Dataset loaded';
+        end
+    end
+end
+
+function pushbutton_getROImasksdir_Callback(hObject,~)
+    hfig = getParentFigure(hObject);
+    start_path = fullfile(getappdata(hfig,'dataPath'),'*.txt');
+    [FileName2,PathName] = uigetfile(start_path,'Select the txt file for ROI mask');
+    ROI_mask_file = fullfile(PathName,FileName2);
+    slot_mask_file = getappdata(hfig, 'slot_mask_file');
+    if getappdata(hfig,'dataLoaded') == false
+        errordlg('Masks cannot be loaded before dataset');
+    else
+        if isequal(FileName2,0)
+            disp('User selected Cancel')
+        else
+            try
+                LoadNewMask(hfig,slot_mask_file,ROI_mask_file);
+                DrawNewMask(hfig)
+                % reload current image
+                i_im = getappdata(hfig,'i_im'); 
+                LoadImage(hfig,i_im);       
+                % (set path if didn't crash)
+                setappdata(hfig,'ROI_mask_file',ROI_mask_file);
+            catch
+                errordlg('failed to load new masks');
+            end
+        end
+    end
+end
+
+function pushbutton_getSLOTmasksdir_Callback(hObject,~)
+    hfig = getParentFigure(hObject);
+    start_path = fullfile(getappdata(hfig,'dataPath'),'*.txt');
+    [FileName1,PathName] = uigetfile(start_path,'Select the txt file for slot mask');
+    slot_mask_file = fullfile(PathName,FileName1);
+    ROI_mask_file = getappdata(hfig, 'ROI_mask_file');
+    if getappdata(hfig,'dataLoaded') == false
+        errordlg('Masks cannot be loaded before dataset');
+    else
+        if isequal(FileName1,0) 
+            disp('User selected Cancel')
+        else
+            try
+                LoadNewMask(hfig,slot_mask_file,ROI_mask_file);
+                DrawNewMask(hfig)
+                % reload current image
+                i_im = getappdata(hfig,'i_im'); 
+                LoadImage(hfig,i_im);        
+                % (set path if didn't crash)
+                setappdata(hfig,'slot_mask_file',slot_mask_file);
+            catch
+                errordlg('failed to load new masks');
+            end
+        end
     end
 end
 
@@ -302,8 +318,7 @@ hfig = getParentFigure(hObject);
 h = impoly;
 setColor(h,[1 1 1]);
 wait(h); % double click to finalize position!
-% update finalized polygon in red color
-setColor(h,[1 0 0]);
+setColor(h,[0 0 1]);
 
 pos = getPosition(h);
 
@@ -330,7 +345,7 @@ h = impoly;
 setColor(h,[1 1 1]);
 wait(h); % double click to finalize position!
 % update finalized polygon in red color
-setColor(h,[1 0 0]);
+setColor(h,[0 0 1]);
 
 pos = getPosition(h);
 
@@ -517,7 +532,6 @@ try
             %     if strcmp(a(end-3:end),'.png')
             str = a(1:end-4);
             C = textscan(str,'%d');
-            
             fileIDs(i) = C{1};
             
             %     else
@@ -713,9 +727,6 @@ delete(hpoly(masktypeID_old));
 if masktypeID_old==1
     masktypeID = 2;    
 elseif masktypeID_old==2
-% 180105 Uncomment to allow setting focus
-%     masktypeID = 3;
-% elseif masktypeID_old==3
     masktypeID = 1;
 end
 
@@ -728,7 +739,11 @@ M(masktypeID).isselected = 1;
 
 % draw new mask
 hpoly(masktypeID) = impoly(gca, M(masktypeID).pos);
-setColor(hpoly(masktypeID),[1,0,0]);
+if masktypeID == 1
+    setColor(hpoly(masktypeID),[0,1,1]);
+elseif masktypeID == 2
+    setColor(hpoly(masktypeID),[0,1,0]);
+end
 
 % save
 setappdata(hfig,'M',M);
@@ -826,7 +841,7 @@ hpoly(1) = impoly(gca, M(1).pos);
 delete(hpoly(1));
 hpoly(masktypeID) = impoly(gca, M(masktypeID).pos);
 M(masktypeID).isselected = 1;
-setColor(hpoly(masktypeID),[1,0,0]);
+setColor(hpoly(masktypeID),[0,1,0]);
 
 % masktypeID = 2;
 % 
@@ -873,7 +888,14 @@ pos_section(:,2) = pos_section(:,2)+translationArray(2);
 end
 
 function LoadNewMask(hfig,slot_mask_file,ROI_mask_file)
-%S = getappdata(hfig,'S');
+global h_ROI_mask h_slot_mask 
+% update textboxs
+[slot_path,slot_name,slot_ext] = fileparts(slot_mask_file);
+[ROI_path,ROI_name,ROI_ext] = fileparts(ROI_mask_file);
+
+
+h_ROI_mask.String = [ROI_name ROI_ext];
+h_slot_mask.String = [slot_name slot_ext];
 
 pos_slot_init = dlmread(slot_mask_file,' ',1,0);
 pos_section_init = dlmread(ROI_mask_file,' ',1,0);
@@ -888,12 +910,6 @@ M(masktypeID).pos_init = pos_section_init;
 
 pos_slot = pos_slot_init;
 pos_section = pos_section_init;
-%pos_slot = S.slot.vertices;
-%pos_section = S.section.vertices;
-%[pos_slot,pos_section] = ReconstitutePos(S,M); 
-% NB: this reconstitution is not correct for newly created masks, 
-% but approximately right assuming that the new mask is similar to 
-% the old one (e.g. minor shape adjustment).
 M(1).pos = pos_slot;
 M(2).pos = pos_section;
 
