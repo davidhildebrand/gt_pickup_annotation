@@ -17,6 +17,16 @@ figure(hfig); axis image
 setappdata(hfig,'dataPath','');
 setappdata(hfig,'outputPath','');
 setappdata(hfig,'imPath','');    
+setappdata(hfig,'queuePath','');
+setappdata(hfig,'previewPath','');
+setappdata(hfig,'startSect',0);
+setappdata(hfig,'endSect',0);
+setappdata(hfig,'skipSect',[]);
+setappdata(hfig,'saveJson',1);
+setappdata(hfig,'savePreviews',1);
+setappdata(hfig,'avoidEdges',1);
+setappdata(hfig,'rot180',0);
+setappdata(hfig,'checkVerified',0);
 
 % Default masks
 setappdata(hfig,'slot_mask_file','masks/slot_mask.txt');
@@ -35,7 +45,7 @@ set(gcf,'defaultUicontrolBackgroundColor',[1 1 1]);
 tgroup = uitabgroup('Parent', hfig, 'Position', [0.05,0.86,0.91,0.14]);
 numtabs = 2;
 tab = cell(1,numtabs);
-M_names = {'General','Queues - TODO'};
+M_names = {'Annotation','Imaging Queue'};
 for i = 1:numtabs
     tab{i} = uitab('Parent', tgroup, 'BackgroundColor', [1,1,1], 'Title', M_names{i});
 end
@@ -51,6 +61,7 @@ grid = 0:bwidth+0.001:1;
 
 %% handles
 global h_i_im h_secID h_datadir h_slot_mask h_ROI_mask h_probflag h_verflag h_status 
+global h_queue_file h_preview_dir h_queue_status
 
 %% UI ----- tab one ----- (General)
 i_tab = 1;
@@ -149,12 +160,106 @@ h_verflag = uicontrol('Parent',tab{i_tab},'Style','checkbox','String','verified?
 i_row = 5;i = 1; n = 12; % Status Text
 h_status = uicontrol('Parent',tab{i_tab},'Style','text','String','STATUS:',...
     'Position',[grid(i) yrow(i_row) bwidth*n rheight]);
+
+%% UI ----- tab one ----- (General)
+i_tab = 2;
+
+%% UI row 1: datasetDir
+i_row = 1; i = 1; n = 0;
+
+i=i+n; n=3; % Set queue output dir pushbutton
+uicontrol('Parent',tab{i_tab},'Style','pushbutton','String','Set queue file',...
+    'Position',[grid(i) yrow(i_row) bwidth*n rheight],...
+    'Callback',@pushbutton_getqueueoutputdir_Callback);
+
+i=i+n; n=12; % Queue output dir textbox
+h_queue_file = uicontrol('Parent',tab{i_tab},'Style','edit',...
+    'Position',[grid(i) yrow(i_row) bwidth*n rheight],...
+    'String','Select Queue File','enable', 'off');
+
+%% UI row 2: preview images
+i_row = 2; i = 1; n = 0;
+
+i=i+n; n=3; % Set preview output dir pushbutton
+uicontrol('Parent',tab{i_tab},'Style','pushbutton','String','Set preview dir',...
+    'Position',[grid(i) yrow(i_row) bwidth*n rheight],...
+    'Callback',@pushbutton_getpreviewoutputdir_Callback);
+
+i=i+n; n=12; % dataDir textbox
+h_preview_dir = uicontrol('Parent',tab{i_tab},'Style','edit',...
+    'Position',[grid(i) yrow(i_row) bwidth*n rheight],...
+    'String','Select Preview Dir','enable', 'off');
+
+%% UI row 3: section selections
+i_row = 3; i = 1;n = 0;
+
+i=i+n; n=2; % Start section label
+uicontrol('Parent',tab{i_tab},'Style','text','String','Start section:',...
+    'Position',[grid(i) yrow(i_row)-dTextHt bwidth*n rheight],'HorizontalAlignment','right');
+
+i=i+n; n=2; % Start section box 
+uicontrol('Parent',tab{i_tab},'Style','edit',...
+    'Position',[grid(i) yrow(i_row) bwidth*n rheight],...
+    'Callback',@edit_startSect_Callback);
+
+i=i+n; n=2; % End section label
+uicontrol('Parent',tab{i_tab},'Style','text','String','End section:',...
+    'Position',[grid(i) yrow(i_row)-dTextHt bwidth*n rheight],'HorizontalAlignment','right');
+
+i=i+n; n=2; % Section ID box
+uicontrol('Parent',tab{i_tab},'Style','edit',...
+    'Position',[grid(i) yrow(i_row) bwidth*n rheight],...
+    'Callback',@edit_endSect_Callback);
+
+i=i+n; n=4; % Skip section label
+uicontrol('Parent',tab{i_tab},'Style','text','String','Sections to skip',...
+    'Position',[grid(i) yrow(i_row)-dTextHt bwidth*n rheight],'HorizontalAlignment','right');
+
+i=i+n; n=6; % Skip sect box
+uicontrol('Parent',tab{i_tab},'Style','edit',...
+    'Position',[grid(i) yrow(i_row) bwidth*n rheight],...
+    'Callback',@edit_skipSect_Callback);
+
+%% run pushbutton and option checkboxes
+i_row = 4; i = 1; n = 0;
+i=i+n; n=3; % Set queue output dir pushbutton
+uicontrol('Parent',tab{i_tab},'Style','pushbutton','String','Make Queue',...
+    'Position',[grid(i) yrow(i_row) bwidth*n rheight],...
+    'Callback',@pushbutton_makequeue_Callback, 'BackgroundColor',[1,1,0]);
+
+i=i+n; n = 3; % Save checkbox
+uicontrol('Parent',tab{i_tab},'Style','checkbox','String','Save json','Value',1,...
+    'Position',[grid(i) yrow(i_row) bwidth*n rheight],...
+    'Callback',@checkbox_SaveJson_Callback);
+
+i=i+n; n = 3; % Preview images
+uicontrol('Parent',tab{i_tab},'Style','checkbox','String','Save previews','Value',1,...
+    'Position',[grid(i) yrow(i_row) bwidth*n rheight],...
+    'Callback',@checkbox_SavePreviews_Callback);
+
+i=i+n; n = 3; % 180 deg rotation
+uicontrol('Parent',tab{i_tab},'Style','checkbox','String','Rotate 180deg','Value',0,...
+    'Position',[grid(i) yrow(i_row) bwidth*n rheight],...
+    'Callback',@checkbox_180rot_Callback);
+
+i=i+n; n = 3; % Avoid tape
+uicontrol('Parent',tab{i_tab},'Style','checkbox','String','Avoid edges','Value',1,...
+    'Position',[grid(i) yrow(i_row) bwidth*n rheight],...
+    'Callback',@checkbox_AvoidEdges_Callback);
+
+i=i+n; n = 3; % Check verified
+uicontrol('Parent',tab{i_tab},'Style','checkbox','String','Check verified','Value',0,...
+    'Position',[grid(i) yrow(i_row) bwidth*n rheight],...
+    'Callback',@checkbox_CheckVerified_Callback);
+
+%% UI row 5: status messages
+i_row = 5;i = 1; n = 12; % Status Text
+h_queue_status = uicontrol('Parent',tab{i_tab},'Style','text','String','STATUS:',...
+    'Position',[grid(i) yrow(i_row) bwidth*n rheight]);
 end
 
 %% Callback functions for UI elements:
-
-%% ----- tab one ----- (General)
-
+%% ----- tab one ----- (Annotations)
 %% row 1: file navigation
 function pushbutton_getdatadir_Callback(hObject,~)
     hfig = getParentFigure(hObject);
@@ -167,7 +272,7 @@ function pushbutton_getdatadir_Callback(hObject,~)
     end
     folder_name = uigetdir(start_path,'Choose dataset folder');
 
-    global h_datadir h_status
+    global h_datadir h_status h_preview_dir
     folder_name = CheckDataDir(folder_name);
 
     if folder_name~=0
@@ -184,16 +289,21 @@ function pushbutton_getdatadir_Callback(hObject,~)
             setappdata(hfig, 'ROI_mask_file', ROI_mask_file);
         end
         slot_mask_file = [folder_name '/masks/slot_mask.txt'];
-        disp(slot_mask_file);
-        if exist(slot_mask_file,'file')
+        if exist(slot_mask_file,'file')f
             setappdata(hfig, 'slot_mask_file', slot_mask_file);
+        end
+        % try to set default preview image path
+        previewPath = [folder_name '/annot_imgs/'];
+        if exist(previewPath, 'dir')
+            setappdata(hfig,'previewPath', previewPath);
+            h_preview_dir.String = previewPath;
         end
         try 
             LoadNewMask(hfig,slot_mask_file,ROI_mask_file);
             hpoly = getappdata(hfig,'hpoly');
             delete(hpoly);
             DrawNewMask(hfig)
-            h_status.String = 'STATUS: Dataset and defauly masks loaded';
+            h_status.String = 'STATUS: Dataset and default masks loaded';
         catch 
             h_status.String = 'STATUS: Dataset loaded';
         end
@@ -380,6 +490,237 @@ S.is_verified = 1; %S.is_verified = get(hobject,'Value;);
 setappdata(hfig,'S',S);
 end
 
+%% ----- tab one ----- (Queues)
+
+%% UI row 1: file navigation
+function pushbutton_getqueueoutputdir_Callback(hObject, ~)
+    global h_queue_file
+    hfig = getParentFigure(hObject);
+    start_path = getappdata(hfig,'queuePath');
+    data_path = getappdata(hfig,'dataPath');
+    if isempty(start_path)
+        if isempty(data_path) 
+            if exist('/n/groups/htem/datasets','dir')
+                start_path = ['/n/groups/htem/datasets/*.json'];
+            else
+                start_path = [pwd '/*.json'];
+            end
+        else 
+            start_path = [data_path '/*.json'];
+        end
+    end
+    [file, path] = uiputfile(start_path,'Choose queue output file');
+    if file ~= 0
+        queuePath = [path '/' file];
+    else
+        queuePath = '';
+    end
+    setappdata(hfig, 'queuePath', queuePath);
+    h_queue_file.String = file;
+end
+
+%% UI row 2: section previews
+function pushbutton_getpreviewoutputdir_Callback(hObject, ~)
+    global h_preview_dir
+    hfig = getParentFigure(hObject);
+    start_path = getappdata(hfig,'previewPath');
+    data_path = getappdata(hfig,'dataPath');
+    if isempty(start_path)
+        if isempty(data_path) 
+            if exist('/n/groups/htem/datasets','dir')
+                start_path = ['/n/groups/htem/datasets/'];
+            else
+                start_path = pwd;
+            end
+        else 
+            start_path = data_path;
+        end
+    end
+    previewPath = uigetdir(start_path,'Choose preview image output folder');
+    setappdata(hfig, 'previewPath', previewPath);
+    h_preview_dir.String = previewPath;
+end
+
+%% UI row 3: section selections
+function edit_startSect_Callback(hObject,~)
+    global h_queue_file
+    hfig = getParentFigure(hObject);
+    % get/format range
+    str = get(hObject,'String');
+    if ~isempty(str)
+        C = textscan(str,'%d');
+        secID = C{1}; % C{:};
+        setappdata(hfig,'startSect',secID);
+    end
+    startSect = getappdata(hfig,'startSect');
+    endSect = getappdata(hfig,'endSect');
+    dataPath = getappdata(hfig,'dataPath');
+    if ~isempty(startSect) && ~isempty(endSect) && ~isempty(dataPath)
+        queueFile = [date '_' num2str(startSect) '_' num2str(endSect)];
+        queuePath = [dataPath '/queues/' queueFile];
+        setappdata(hfig, 'queuePath', queuePath);
+    end
+    h_queue_file.String = queueFile;
+end
+
+function edit_endSect_Callback(hObject,~)
+	global h_queue_file
+    hfig = getParentFigure(hObject);
+    % get/format range
+    str = get(hObject,'String');
+    if ~isempty(str)
+        C = textscan(str,'%d');
+        secID = C{1}; % C{:};
+        setappdata(hfig,'endSect',secID);
+    end
+    startSect = getappdata(hfig,'startSect');
+    endSect = getappdata(hfig,'endSect');
+    dataPath = getappdata(hfig,'dataPath');
+    if ~isempty(startSect) && ~isempty(endSect) && ~isempty(dataPath)
+        queueFile = [date '_' num2str(startSect) '_' num2str(endSect)];
+        queuePath = [dataPath '/queues/' queueFile];
+        setappdata(hfig, 'queuePath', queuePath);
+    end
+    h_queue_file.String = queueFile;
+end
+
+function edit_skipSect_Callback(hObject,~)
+    hfig = getParentFigure(hObject);
+    % get/format range
+    str = get(hObject,'String');
+    if ~isempty(str)
+        sects = str2num(str);
+        setappdata(hfig,'skipSect',sects);
+    end
+end
+
+%% UI row 4: run and checkboxes
+
+function checkbox_SaveJson_Callback(hObject,~)
+    hfig = getParentFigure(hObject);
+    setappdata (hfig, 'saveJson', get(hObject,'Value'));
+end
+
+function checkbox_SavePreviews_Callback(hObject,~)
+    hfig = getParentFigure(hObject);
+    setappdata (hfig, 'savePreviews', get(hObject,'Value'));
+end
+
+function checkbox_AvoidEdges_Callback(hObject,~)
+    hfig = getParentFigure(hObject);
+    setappdata (hfig, 'avoidEdges', get(hObject,'Value'));
+end
+
+function checkbox_180rot_Callback(hObject,~)
+    hfig = getParentFigure(hObject);
+    setappdata (hfig, 'rot180', get(hObject,'Value'));
+end
+
+function checkbox_CheckVerified_Callback(hObject,~)
+    hfig = getParentFigure(hObject);
+    setappdata (hfig, 'checkVerified', get(hObject,'Value'));
+end
+
+function pushbutton_makequeue_Callback(hObject,~)
+    hfig = getParentFigure(hObject);
+    
+    % set flags from checkboxes
+    saveJson = getappdata(hfig, 'saveJson');
+    savePreviews = getappdata(hfig, 'savePreviews');
+    rot180 = getappdata(hfig,'rot180'); % whether 180rot is necessary for stainer images vs TEMCA.
+    avoidEdges = getappdata(hfig, 'avoidEdges'); %crops out ROI edges that intersects with slot mask
+        
+    % load paths 
+    annotPath = getappdata(hfig,'outputPath');
+    imPath = getappdata(hfig,'imPath');    
+    queuePath = getappdata(hfig,'queuePath');
+    previewPath = getappdata(hfig,'previewPath');
+
+    % generate section list
+    startSectionID = getappdata(hfig, 'startSect');
+    endSectionID = getappdata(hfig,'endSect');
+    skipList = getappdata(hfig,'skipSect');
+    sectionList = startSectionID:endSectionID;
+    sectionList = setdiff(sectionList,skipList,'stable');
+
+    % check that annotations exist 
+    missingSects = [];
+    for i = 1:length(sectionList)
+        f = fullfile(annotPath,[num2str(sectionList(i)),'.txt']);
+        if ~isfile(f)
+            missingSects = [missingSects sectionList(i)];
+        end
+    end
+    if ~isempty(missingSects)
+        errordlg(['Annotations missing for ' num2str(missingSects)]);
+        return
+    end
+    
+    % Read annotations and calculate ROIs
+    q_data = struct; % queue data for all ROIs
+    for i = 1:length(sectionList)
+        f = fullfile(annotPath,[num2str(sectionList(i)),'.txt']);
+        try 
+            fid = fopen(f, 'rt'); 
+            fclose(fid);
+        catch % prev checked that they exist so this shouldn't catch
+            errordlg([num2str(sectionList(i)) '.txt does not exist']);
+            return
+        end
+        try
+            [ROIvert, slotVert, isProblem, isVerified] = parseAnnotTxt(f);        
+        catch
+            errordlg(['error parsing ' num2str(sectionList(i)) '.txt']);
+        end
+        % place ROI
+        ROI_data = placeROI(ROIvert, slotVert, avoidEdges, rot180);  
+        ROIs = {ROI_data}; % could support mult ROIs per section
+        sectKey = ['REMOVEME' num2str(sectionList(i))]; % bc matlab struct can't start with num
+        q_data.(sectKey) = struct;
+        q_data.(sectKey).rois = ROIs; % Add section to queue file
+    end
+    
+    % TODO check problems
+    % TODO check verified
+    
+    % Write json queue file
+    if saveJson
+        q_json = erase(jsonencode(q_data),'REMOVEME'); %int keys hack
+        if saveJson
+            if isempty(queuePath)
+                errordlg('Enter queue path first');
+                return
+            end
+            try
+                fid = fopen(queuePath, 'w');
+                fprintf(fid, q_json);
+            catch
+                errordlg('Error accessing queue output path');
+            end
+        end
+    end
+    
+    % Display preview images
+    if savePreviews
+        for i = 1:length(sectionList)
+            if isempty(previewPath)
+                errordlg('Enter ROI preview path first');
+                return
+            end
+            try
+                i_im = sectionList(i);
+                LoadImage(hfig,i_im);
+                PlotSlotCenter(hfig, i_im);
+                pause(.5);
+                F = frame2im(getframe(hfig));
+                img_save_path = [previewPath '/' num2str(sectionList(i)) '.png'];
+                imwrite(F,img_save_path);
+            catch
+                errordlg('Error accessing ROI preview output path');
+            end
+        end
+    end
+end
 %% UI-level functions
 
 function KeyPressCallback(hfig, event)
@@ -593,6 +934,13 @@ setappdata(hfig,'S',S);
 WriteToText_GTA(secID,S,M,outputPath);
 end
 
+function PlotSlotCenter(hfig, i_im)
+    S = getappdata(hfig,'S');
+    pos_slot = S.slot.vertices;
+    slot_center_pxl = [mean(pos_slot(:,1)) mean(pos_slot(:,2))];
+    plot(slot_center_pxl(:,1),slot_center_pxl(:,2),'mo','Linewidth',3);
+end  
+
 function LoadImage(hfig,i_im)
 % save mask positions for previous image
 if getappdata(hfig,'dataLoaded') == true
@@ -628,6 +976,7 @@ allAxesInFigure = findall(hfig,'type','axes');
 if ~isempty(allAxesInFigure),
     delete(allAxesInFigure);
 end
+delete(findall(gcf,'type','annotation'))
 axes(gca);
 
 % Preprocess image to make easier to see edges
@@ -639,10 +988,23 @@ channel = 3; % blue channel seems to be the most informative
 num_levels = 20; % number of levels for histogram equalization
 %imshow(histeq(im_raw(top_crop:bottom_crop,left_crop:right_crop),20),jet(255));
 %imshow(histeq(im_raw(:,:,3),20),jet(255));
+
 imagesc(im_raw);
 axis equal; axis off
 % setappdata(hfig,'im_raw',im_raw);
 % setappdata(hfig,'h_ax',h_ax);
+
+% Add Sec Num Label
+dim = [.3 .5 .3 .3];
+str = ['Section ' num2str(i_im)];
+a = annotation('textbox',dim,'String',str,'FitBoxToText','on', 'Color', 'red');
+a.FontSize = 18;
+
+% Add slot center marker
+hold on;
+PlotSlotCenter(hfig, i_im);
+
+
 
 %% set flags and set pos from file
 global h_probflag h_verflag
@@ -921,4 +1283,59 @@ function fig = getParentFigure(fig)
 while ~isempty(fig) && ~strcmp('figure', get(fig,'type'))
     fig = get(fig,'parent');
 end
+end
+
+function [ROIvert, slotVert, isProblem, isVerified] = parseAnnotTxt(f)
+    fid = fopen(f, 'rt'); 
+    s = textscan(fid, '%s', 'delimiter', '\n');
+    idx1 = find(strcmp(s{1}, 'SLOT'), 1, 'first');
+    idx2 = find(strcmp(s{1}, 'TOLS'), 1, 'first');
+    slotVert = dlmread(f,'',[idx1 0 idx2-2 1]);
+    
+    idx3 = find(strcmp(s{1}, 'SECTION'), 1, 'first');
+    idx4 = find(strcmp(s{1}, 'NOITCES'), 1, 'first');
+    ROIvert = dlmread(f,'',[idx3 0 idx4-2 1]);
+    
+    idx5 = find(strcmp(s{1}, 'FLAGS'), 1, 'first');
+    flags = dlmread(f,'',[idx5+1 0 idx5+1 1]);
+    isProblem = flags(1);
+    isVerified = flags(2);
+end
+
+function ROI_data = placeROI(ROIvert, slotVert, avoidEdges, rot180)
+    pxl_size = 5.3; % um, propety of point grey camera
+    pxl_scale = 1000/pxl_size/1e6; % pxls per nm 
+    ROI_data = struct;
+    % Crop ROI to avoid slot edges
+    ROIpoly = polyshape(ROIvert(:,1), ROIvert(:,2));
+    slotpoly = polyshape(slotVert(:,1),slotVert(:,2));
+    if avoidEdges == true
+        ROI_crop_poly = intersect(ROIpoly, slotpoly);
+    else
+        ROI_crop_poly = ROIpoly;
+    end
+    ROI_crop = ROI_crop_poly.Vertices;
+
+    % Subtract slot center
+    slot_center_pxl = [mean(slotVert(:,1)) mean(slotVert(:,2))];
+    ROIvert_placed_nm = round((ROI_crop-slot_center_pxl)./pxl_scale); 
+    if rot180
+        ROIvert_placed_nm = -ROIvert_placed_nm; % 180 degree rotation to match temcaGT vs staining image orientation.
+    end
+    
+    % Calculate bounding box 
+    right_edge_nm = max(ROIvert_placed_nm(:,1)); 
+    left_edge_nm = min(ROIvert_placed_nm(:,1));
+    top_edge_nm = min(ROIvert_placed_nm(:,2)); % top is y smaller on scope
+    bottom_edge_nm = max(ROIvert_placed_nm(:,2));
+    ROI_data.right = right_edge_nm;
+    ROI_data.top = top_edge_nm;
+    ROI_data.width = right_edge_nm - left_edge_nm;
+    ROI_data.height = bottom_edge_nm - top_edge_nm;
+    
+    % Convert vertices to fractions of bounding box
+    ROI_data.vertices = nan(size(ROIvert_placed_nm));
+    ROI_data.vertices(:,1) = (ROIvert_placed_nm(:,1)-left_edge_nm)/ROI_data.width;
+    ROI_data.vertices(:,2) = (ROIvert_placed_nm(:,2)-top_edge_nm)/ROI_data.height;
+    ROI_data.vertices = single(ROI_data.vertices); % to avoid clutter in queue json
 end
