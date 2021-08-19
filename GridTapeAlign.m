@@ -289,7 +289,7 @@ function pushbutton_getdatadir_Callback(hObject,~)
             setappdata(hfig, 'ROI_mask_file', ROI_mask_file);
         end
         slot_mask_file = [folder_name '/masks/slot_mask.txt'];
-        if exist(slot_mask_file,'file')f
+        if exist(slot_mask_file,'file')
             setappdata(hfig, 'slot_mask_file', slot_mask_file);
         end
         % try to set default preview image path
@@ -937,8 +937,12 @@ end
 function PlotSlotCenter(hfig, i_im)
     S = getappdata(hfig,'S');
     pos_slot = S.slot.vertices;
-    slot_center_pxl = [mean(pos_slot(:,1)) mean(pos_slot(:,2))];
-    plot(slot_center_pxl(:,1),slot_center_pxl(:,2),'mo','Linewidth',3);
+    if isempty(pos_slot)
+        return
+    else
+        slot_center_pxl = [mean(pos_slot(:,1)) mean(pos_slot(:,2))];
+        plot(slot_center_pxl(:,1),slot_center_pxl(:,2),'mo','Linewidth',3);
+    end
 end  
 
 function LoadImage(hfig,i_im)
