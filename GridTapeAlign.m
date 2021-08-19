@@ -996,7 +996,8 @@ axis equal; axis off
 
 % Add Sec Num Label
 dim = [.3 .5 .3 .3];
-str = ['Section ' num2str(i_im)];
+secID = GetSectionIDfromCounter(hfig,i_im);
+str = ['Section ' num2str(secID)];
 a = annotation('textbox',dim,'String',str,'FitBoxToText','on', 'Color', 'red');
 a.FontSize = 18;
 
