@@ -10,7 +10,8 @@ hold off; axis off
 
 % init GUI drawing axes
 %ax_pos = [0.1, 0.1, 0.8, 0.7];
-% setappdata(hfig,'ax_pos',ax_pos);
+%setappdata(hfig,'ax_pos',ax_pos);
+%setappdata(hfig,'InnerPosition',[.4 .4 .6 .6]);
 figure(hfig); axis image
 
 %% Initialize no-data state
@@ -53,7 +54,6 @@ end
 % grid setup, to help align display elements
 rheight = 0.2;
 yrow = .8:-.2:0;%.75:-.25:0;
-disp(yrow)
 dTextHt = 0.05; % dTextHt = manual adjustment for 'text' controls:
 % (vertical alignment is top instead of center like for all other controls)
 bwidth = 0.03;
@@ -556,7 +556,7 @@ function edit_startSect_Callback(hObject,~)
     endSect = getappdata(hfig,'endSect');
     dataPath = getappdata(hfig,'dataPath');
     if ~isempty(startSect) && ~isempty(endSect) && ~isempty(dataPath)
-        queueFile = [date '_' num2str(startSect) '_' num2str(endSect)];
+        queueFile = [date '_' num2str(startSect) '-' num2str(endSect)];
         queuePath = [dataPath '/queues/' queueFile];
         setappdata(hfig, 'queuePath', queuePath);
     end
@@ -622,6 +622,7 @@ function checkbox_CheckVerified_Callback(hObject,~)
 end
 
 function pushbutton_makequeue_Callback(hObject,~)
+    global h_queue_status
     hfig = getParentFigure(hObject);
     
     % set flags from checkboxes
@@ -688,14 +689,14 @@ function pushbutton_makequeue_Callback(hObject,~)
         q_json = erase(jsonencode(q_data),'REMOVEME'); %int keys hack
         if saveJson
             if isempty(queuePath)
-                errordlg('Enter queue path first');
+                h_queue_status.String='Enter queue path first';
                 return
             end
             try
                 fid = fopen(queuePath, 'w');
                 fprintf(fid, q_json);
             catch
-                errordlg('Error accessing queue output path');
+                h_queue_status.String='Error accessing queue output path';
             end
         end
     end
@@ -977,12 +978,12 @@ im_raw = imread(fullfile(imPath,List.filenames{i_im}));
 %% draw image
 % clean-up canvas
 allAxesInFigure = findall(hfig,'type','axes');
-if ~isempty(allAxesInFigure),
+if ~isempty(allAxesInFigure)
     delete(allAxesInFigure);
 end
 delete(findall(gcf,'type','annotation'))
-axes(gca);
-
+% define axes to avoid being covered by buttons at top
+ax = axes('Position',[0.1 0.1 0.75 0.75]);
 % Preprocess image to make easier to see edges
 %left_crop = 0; %1 for vnc1
 %right_crop = 1000; %1012 for vnc1
@@ -993,7 +994,7 @@ num_levels = 20; % number of levels for histogram equalization
 %imshow(histeq(im_raw(top_crop:bottom_crop,left_crop:right_crop),20),jet(255));
 %imshow(histeq(im_raw(:,:,3),20),jet(255));
 
-imagesc(im_raw);
+imagesc(ax,im_raw);
 axis equal; axis off
 % setappdata(hfig,'im_raw',im_raw);
 % setappdata(hfig,'h_ax',h_ax);
