@@ -1309,7 +1309,7 @@ function [ROIvert, slotVert, isProblem, isVerified] = parseAnnotTxt(f)
 end
 
 function ROI_data = placeROI(ROIvert, slotVert, avoidEdges, rot180)
-    pxl_size = 2.5; % um, approx from new ATUM placement cam
+    pxl_size = 2.8; % um, approx from new ATUM placement cam
     pxl_scale = 1000/pxl_size/1e6; % pxls per nm 
     ROI_data = struct;
     % Crop ROI to avoid slot edges
