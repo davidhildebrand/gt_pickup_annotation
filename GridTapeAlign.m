@@ -709,7 +709,7 @@ function pushbutton_makequeue_Callback(hObject,~)
                 return
             end
             try
-                i_im = sectionList(i);
+                i_im = GetCounterFromSectionID(hfig,sectionList(i));
                 LoadImage(hfig,i_im);
                 PlotSlotCenter(hfig, i_im);
                 pause(.5);
