@@ -28,6 +28,7 @@ setappdata(hfig,'savePreviews',1);
 setappdata(hfig,'avoidEdges',1);
 setappdata(hfig,'rot180',0);
 setappdata(hfig,'checkVerified',0);
+setappdata(hfig,'contrast_adj',1);
 
 % Default masks
 setappdata(hfig,'slot_mask_file','masks/slot_mask.txt');
@@ -60,8 +61,9 @@ bwidth = 0.03;
 grid = 0:bwidth+0.001:1;
 
 %% handles
-global h_i_im h_secID h_datadir h_slot_mask h_ROI_mask h_probflag h_verflag h_status 
-global h_queue_file h_preview_dir h_queue_status
+global h_i_im h_secID h_datadir h_slot_mask h_ROI_mask h_probflag h_verflag h_status h_contrast_adj
+global h_queue_file h_preview_dir h_queue_status 
+global h_img 
 
 %% UI ----- tab one ----- (General)
 i_tab = 1;
@@ -155,6 +157,11 @@ i=i+n; n = 3; % Verified checkbox
 h_verflag = uicontrol('Parent',tab{i_tab},'Style','checkbox','String','verified?','Value',0,...
     'Position',[grid(i) yrow(i_row) bwidth*n rheight],...
     'Callback',@checkbox_isVerifiedFlag_Callback);
+
+i=i+n; n = 3; % Contrast adjustment
+h_contrast_adj = uicontrol('Parent',tab{i_tab},'Style','checkbox','String','contrast adj','Value',1,...
+    'Position',[grid(i) yrow(i_row) bwidth*n rheight],...
+    'Callback',@checkbox_contrastAdj_Callback);
 
 %% UI row 5: status messages
 i_row = 5;i = 1; n = 12; % Status Text
@@ -409,6 +416,8 @@ end
 function pushbutton_loadNextImage_Callback(hObject,~)
 hfig = getParentFigure(hObject);
 LoadNextImage(hfig);
+global h_img
+%imcontrast(h_img);
 end
 
 function pushbutton_resetMasks_Callback(hObject,~)
@@ -486,8 +495,16 @@ end
 function checkbox_isVerifiedFlag_Callback(hObject,~)
 hfig = getParentFigure(hObject);
 S = getappdata(hfig,'S');
-S.is_verified = 1; %S.is_verified = get(hobject,'Value;);
+%S.is_verified = 1; 
+S.is_verified = get(hobject,'Value');
 setappdata(hfig,'S',S);
+end
+
+function checkbox_contrastAdj_Callback(hObject, ~)
+hfig = getParentFigure(hObject);
+adj = get(hObject,'Value');
+setappdata(hfig,'contrast_adj',adj);
+LoadImage(hfig,getappdata(hfig, 'i_im'));
 end
 
 %% ----- tab one ----- (Queues)
@@ -947,110 +964,112 @@ function PlotSlotCenter(hfig, i_im)
 end  
 
 function LoadImage(hfig,i_im)
-% save mask positions for previous image
-if getappdata(hfig,'dataLoaded') == true
-    SaveCurrentMasks(hfig);
-end 
+    % save mask positions for previous image
+    if getappdata(hfig,'dataLoaded') == true
+        SaveCurrentMasks(hfig);
+    end 
 
-% load new file
-setappdata(hfig,'i_im',i_im); % set new image index
-secID = GetSectionIDfromCounter(hfig,i_im);
+    % load new file
+    setappdata(hfig,'i_im',i_im); % set new image index
+    secID = GetSectionIDfromCounter(hfig,i_im);
 
-% try to load txt data, if exist (otherwise just init)
-outputPath = getappdata(hfig,'outputPath');
-slot_mask_file = getappdata(hfig,'slot_mask_file');
-ROI_mask_file = getappdata(hfig,'ROI_mask_file');
-[S,tf] = ScanText_GTA(secID,outputPath,slot_mask_file,ROI_mask_file);
-setappdata(hfig,'S',S);
+    % try to load txt data, if exist (otherwise just init)
+    outputPath = getappdata(hfig,'outputPath');
+    slot_mask_file = getappdata(hfig,'slot_mask_file');
+    ROI_mask_file = getappdata(hfig,'ROI_mask_file');
+    [S,tf] = ScanText_GTA(secID,outputPath,slot_mask_file,ROI_mask_file);
+    setappdata(hfig,'S',S);
 
-%% update GUI
-global h_i_im;
-h_i_im.String = num2str(i_im);
+    %% update GUI
+    global h_i_im;
+    h_i_im.String = num2str(i_im);
 
-global h_secID;
-h_secID.String = num2str(secID);
+    global h_secID;
+    h_secID.String = num2str(secID);
 
-% load new image
-imPath = getappdata(hfig,'imPath');
-List = getappdata(hfig,'List');
-im_raw = imread(fullfile(imPath,List.filenames{i_im}));
+    % load new image
+    imPath = getappdata(hfig,'imPath');
+    List = getappdata(hfig,'List');
+    im_raw = imread(fullfile(imPath,List.filenames{i_im}));
 
-%% draw image
-% clean-up canvas
-allAxesInFigure = findall(hfig,'type','axes');
-if ~isempty(allAxesInFigure)
-    delete(allAxesInFigure);
-end
-delete(findall(gcf,'type','annotation'))
-% define axes to avoid being covered by buttons at top
-ax = axes('Position',[0.1 0.1 0.75 0.75]);
-% Preprocess image to make easier to see edges
-%left_crop = 0; %1 for vnc1
-%right_crop = 1000; %1012 for vnc1
-%top_crop = 1;
-%bottom_crop = 500;
-channel = 3; % blue channel seems to be the most informative
-num_levels = 20; % number of levels for histogram equalization
-%imshow(histeq(im_raw(top_crop:bottom_crop,left_crop:right_crop),20),jet(255));
-%imshow(histeq(im_raw(:,:,3),20),jet(255));
+    %% draw image
+    % clean-up canvas
+    allAxesInFigure = findall(hfig,'type','axes');
+    if ~isempty(allAxesInFigure)
+        delete(allAxesInFigure);
+    end
+    delete(findall(gcf,'type','annotation'))
+    % define axes to avoid being covered by buttons at top
+    ax = axes('Position',[0.1 0.1 0.75 0.75]);
 
-imagesc(ax,im_raw);
-axis equal; axis off
-% setappdata(hfig,'im_raw',im_raw);
-% setappdata(hfig,'h_ax',h_ax);
+    contrast_adj = getappdata(hfig, 'contrast_adj');
+    if contrast_adj
+        flatfield = 1;
+        im_adj = mean(im_raw,3);
+        if flatfield
+            im_adj = imflatfield(im_adj, 30);
+        end
+        h_img = imshow(im_adj, [0,255]);
+        colormap gray
+    else
+        h_img = imagesc(ax,im_raw);
+    end
+    axis equal; axis off
 
-% Add Sec Num Label
-dim = [.3 .5 .3 .3];
-secID = GetSectionIDfromCounter(hfig,i_im);
-str = ['Section ' num2str(secID)];
-a = annotation('textbox',dim,'String',str,'FitBoxToText','on', 'Color', 'red');
-a.FontSize = 18;
+    % Add Sec Num Label
+    dim = [.3 .5 .3 .3];
+    secID = GetSectionIDfromCounter(hfig,i_im);
+    str = ['Section ' num2str(secID)];
+    a = annotation('textbox',dim,'String',str,'FitBoxToText','on', 'Color', 'red');
+    a.FontSize = 18;
 
-% Add slot center marker
-hold on;
-PlotSlotCenter(hfig, i_im);
+    % Add slot center marker
+    hold on;
+    PlotSlotCenter(hfig, i_im);
 
+    %% set flags and set pos from file
+    global h_probflag h_verflag
 
+    % setup mask position from info saved in S
+    if tf % (if annotation file exists)
+        %disp([num2str(i_im),': sectionID = ',num2str(secID)]);
+        S = getappdata(hfig,'S');
 
-%% set flags and set pos from file
-global h_probflag h_verflag
+        pos_slot_init = dlmread(slot_mask_file,' ',1,0);
+        pos_section_init = dlmread(ROI_mask_file,' ',1,0);
+        % init mask struct
+        M = [];
 
-% setup mask position from info saved in S
-if tf % (if annotation file exists)
-    %disp([num2str(i_im),': sectionID = ',num2str(secID)]);
-    S = getappdata(hfig,'S');
+        masktypeID = 1;
+        M(masktypeID).pos_init = pos_slot_init;
 
-    pos_slot_init = dlmread(slot_mask_file,' ',1,0);
-    pos_section_init = dlmread(ROI_mask_file,' ',1,0);
-    % init mask struct
-    M = [];
-    
-    masktypeID = 1;
-    M(masktypeID).pos_init = pos_slot_init;
-    
-    masktypeID = 2;
-    M(masktypeID).pos_init = pos_section_init;
-    
-    pos_slot = S.slot.vertices;
-    pos_section = S.section.vertices;
-    
-    M(1).pos = pos_slot;
-    M(2).pos = pos_section;
-    
-    setappdata(hfig,'M',M);
-    
-    %% load flags
-    h_probflag.Value = S.is_problematic;
-%     h_verflag.Value = S.is_verified;
-    h_verflag.Value = 1;
-else
-    LoadNewMask(hfig,slot_mask_file,ROI_mask_file);
-    h_probflag.Value = 0;
-    h_verflag.Value = 0; 
-end
+        masktypeID = 2;
+        M(masktypeID).pos_init = pos_section_init;
 
-%% draw mask
-DrawNewMask(hfig);
+        pos_slot = S.slot.vertices;
+        pos_section = S.section.vertices;
+
+        M(1).pos = pos_slot;
+        M(2).pos = pos_section;
+
+        setappdata(hfig,'M',M);
+
+        %% load flags
+        h_probflag.Value = S.is_problematic;
+    %     h_verflag.Value = S.is_verified;
+        h_verflag.Value = 1;
+    else
+        LoadNewMask(hfig,slot_mask_file,ROI_mask_file);
+        h_probflag.Value = 0;
+        h_verflag.Value = 0; 
+    end
+
+    %% draw mask
+    DrawNewMask(hfig);
+
+    if contrast_adj
+        imcontrast(h_img)
+    end
 
 end
 
