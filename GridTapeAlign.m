@@ -573,7 +573,7 @@ function edit_startSect_Callback(hObject,~)
     endSect = getappdata(hfig,'endSect');
     dataPath = getappdata(hfig,'dataPath');
     if ~isempty(startSect) && ~isempty(endSect) && ~isempty(dataPath)
-        queueFile = [date '_' num2str(startSect) '-' num2str(endSect)];
+        queueFile = [datestr(date, 'yyMMdd') '_' num2str(startSect) '-' num2str(endSect)];
         queuePath = [dataPath '/queues/' queueFile];
         setappdata(hfig, 'queuePath', queuePath);
     end
@@ -594,7 +594,7 @@ function edit_endSect_Callback(hObject,~)
     endSect = getappdata(hfig,'endSect');
     dataPath = getappdata(hfig,'dataPath');
     if ~isempty(startSect) && ~isempty(endSect) && ~isempty(dataPath)
-        queueFile = [date '_' num2str(startSect) '_' num2str(endSect)];
+        queueFile = [datestr(date, 'yyMMdd') '_' num2str(startSect) '-' num2str(endSect)];
         queuePath = [dataPath '/queues/' queueFile];
         setappdata(hfig, 'queuePath', queuePath);
     end
