@@ -29,6 +29,7 @@ setappdata(hfig,'avoidEdges',1);
 setappdata(hfig,'rot180',0);
 setappdata(hfig,'checkVerified',0);
 setappdata(hfig,'contrast_adj',1);
+setappdata(hfig,'caxi',[0, 255]);
 
 % Default masks
 setappdata(hfig,'slot_mask_file','masks/slot_mask.txt');
@@ -217,7 +218,7 @@ i=i+n; n=2; % Section ID box
 uicontrol('Parent',tab{i_tab},'Style','edit',...
     'Position',[grid(i) yrow(i_row) bwidth*n rheight],...
     'Callback',@edit_endSect_Callback);
-
+setappdata(hfig,'contrast_adj',1);
 i=i+n; n=4; % Skip section label
 uicontrol('Parent',tab{i_tab},'Style','text','String','Sections to skip',...
     'Position',[grid(i) yrow(i_row)-dTextHt bwidth*n rheight],'HorizontalAlignment','right');
@@ -993,6 +994,9 @@ function LoadImage(hfig,i_im)
     im_raw = imread(fullfile(imPath,List.filenames{i_im}));
 
     %% draw image
+    % obtain previous axis contrast limits
+    my_caxis = caxis;
+    setappdata(hfig, 'caxis', my_caxis)
     % clean-up canvas
     allAxesInFigure = findall(hfig,'type','axes');
     if ~isempty(allAxesInFigure)
@@ -1009,7 +1013,8 @@ function LoadImage(hfig,i_im)
         if flatfield
             im_adj = imflatfield(im_adj, 30);
         end
-        h_img = imshow(im_adj, [0,255]);
+        my_caxis = getappdata(hfig,'caxis');
+        h_img = imshow(im_adj, my_caxis);
         colormap gray
     else
         h_img = imagesc(ax,im_raw);
@@ -1066,7 +1071,6 @@ function LoadImage(hfig,i_im)
 
     %% draw mask
     DrawNewMask(hfig);
-
     if contrast_adj
         imcontrast(h_img)
     end
