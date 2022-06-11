@@ -32,10 +32,10 @@ setappdata(hfig,'contrast_adj',1);
 setappdata(hfig,'caxi',[0, 255]);
 
 % Default masks
-setappdata(hfig,'slot_mask_file','masks/slot_mask.txt');
-setappdata(hfig,'ROI_mask_file','masks/ROI_mask.txt');
 slot_mask_name = 'slot_mask.txt';
 ROI_mask_name = 'ROI_mask.txt';
+setappdata(hfig,'slot_mask_file',['masks' filesep slot_mask_name]);
+setappdata(hfig,'ROI_mask_file',['masks' filesep ROI_mask_name]);
 
 % dataSet loaded successfully flag
 setappdata(hfig,'dataLoaded',false);
@@ -273,7 +273,7 @@ function pushbutton_getdatadir_Callback(hObject,~)
     hfig = getParentFigure(hObject);
     start_path = getappdata(hfig,'dataPath');
     if isempty(start_path) 
-        gt_dir = '/n/groups/htem/temcagt/datasets';
+        gt_dir = '/Users/davidh/Data/r169_gut';
         if exist(gt_dir,'dir')
             start_path = gt_dir;
         end
@@ -286,22 +286,22 @@ function pushbutton_getdatadir_Callback(hObject,~)
     if folder_name~=0
         h_datadir.String = folder_name;
         setappdata(hfig,'dataPath',folder_name);   
-        setappdata(hfig,'imPath',[folder_name '/img_links']);
-        setappdata(hfig,'outputPath',[folder_name '/annotations']);  
+        setappdata(hfig,'imPath',[folder_name filesep 'slot_images']);
+        setappdata(hfig,'outputPath',[folder_name filesep 'annotations']);  
         ParseImageDir(hfig,getappdata(hfig,'imPath'));
         loadFirstSection(hfig);     
         setappdata(hfig,'dataLoaded',true);
         % try to load masks from datadir
-        ROI_mask_file = [folder_name '/masks/ROI_mask.txt'];
+        ROI_mask_file = [folder_name filesep 'masks' filesep 'ROI_mask.txt'];
         if exist(ROI_mask_file,'file')
             setappdata(hfig, 'ROI_mask_file', ROI_mask_file);
         end
-        slot_mask_file = [folder_name '/masks/slot_mask.txt'];
+        slot_mask_file = [folder_name filesep 'masks' filesep 'slot_mask.txt'];
         if exist(slot_mask_file,'file')
             setappdata(hfig, 'slot_mask_file', slot_mask_file);
         end
         % try to set default preview image path
-        previewPath = [folder_name '/annot_imgs/'];
+        previewPath = [folder_name filesep 'annot_imgs' filesep];
         if exist(previewPath, 'dir')
             setappdata(hfig,'previewPath', previewPath);
             h_preview_dir.String = previewPath;
@@ -311,9 +311,9 @@ function pushbutton_getdatadir_Callback(hObject,~)
             hpoly = getappdata(hfig,'hpoly');
             delete(hpoly);
             DrawNewMask(hfig)
-            h_status.String = 'STATUS: Dataset and default masks loaded';
+            h_status.String = 'STATUS: dataset and default masks loaded';
         catch 
-            h_status.String = 'STATUS: Dataset loaded';
+            h_status.String = 'STATUS: dataset loaded';
         end
     end
 end
@@ -389,7 +389,7 @@ function edit_imageCount_Callback(hObject,~)
 hfig = getParentFigure(hObject);
 % get/format range
 str = get(hObject,'String');
-if ~isempty(str),
+if ~isempty(str)
     C = textscan(str,'%d');
     i_im = C{1}; % C{:};
     LoadImage(hfig,i_im);
@@ -400,7 +400,7 @@ function edit_secID_Callback(hObject,~)
 hfig = getParentFigure(hObject);
 % get/format range
 str = get(hObject,'String');
-if ~isempty(str),
+if ~isempty(str)
     C = textscan(str,'%d');
     secID = C{1}; % C{:};
     
@@ -857,16 +857,16 @@ end
 function folder = CheckDataDir(folder_name)
     global h_status
     if ~exist(folder_name,'dir')
-        h_status.String = 'ERROR: data dir does not exist';
+        h_status.String = 'ERROR: data path does not exist';
         folder = '';
-    elseif ~exist([folder_name '/img_links'], 'dir')
-        h_status.String = 'ERROR: img_links folder does not exist';
+    elseif ~exist([folder_name filesep 'slot_images'], 'dir')
+        h_status.String = 'ERROR: slot_images folder does not exist';
         folder = '';
-    elseif ~exist([folder_name '/annotations'], 'dir')
+    elseif ~exist([folder_name filesep 'annotations'], 'dir')
         h_status.String = 'ERROR: annotations folder does not exist';
         folder = '';
     else
-        h_status.String = 'STATUS: Data dir loaded';
+        h_status.String = 'STATUS: data loaded';
         folder = folder_name;
     end
 end
